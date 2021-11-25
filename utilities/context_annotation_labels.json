@@ -1,0 +1,94 @@
+{
+  "products": [
+    "Product",
+    "Product Version",
+    "Multimedia Franchise"
+  ],
+  "entertainment": [
+    "TV Shows",
+    "TV Episodes",
+    "Interests and Hobbies Vertical",
+    "Interests and Hobbies Category",
+    "Interests and Hobbies",
+    "Music Genre",
+    "Book Music Genre",
+    "Book Genre",
+    "Movie",
+    "Movie Genre",
+    "Music Album",
+    "Radio Station",
+    "Podcast",
+    "Concert",
+    "Movie Festival",
+    "Award Show",
+    "Song",
+    "Musician ",
+    "Actor",
+    "Entertainment Personality",
+    "Digital Creator",
+    "Fictional Character",
+    "Fan Community"
+  ],
+  "videogame": [
+    "Video Game",
+    "Video Game Publisher",
+    "Video Game Hardware",
+    "Video Game Conference",
+    "Video Game Tournament ",
+    "eSports Team",
+    "eSports Player",
+    "Video Game Personality"
+  ],
+  "sport": [
+    "Sports Events",
+    "Sport",
+    "Sports Team",
+    "Sports League",
+    "American Football Game",
+    "NFL Football Game",
+    "Basketball Game",
+    "Sports Series",
+    "Hockey Game",
+    "Athlete",
+    "Sports Personality ",
+    "Coach"
+  ],
+  "person": [
+    "Person",
+    "Musician",
+    "Actor",
+    "Entertainment Personality",
+    "Athlete",
+    "Sports Personality ",
+    "Coach",
+    "Journalist",
+    "Viral Accounts",
+    "Digital Creator",
+    "Fictional Character",
+    "Video Game Personality",
+    "eSports Player",
+    "Politicians"
+  ],
+  "politics": [
+    "Politicians",
+    "Political Race",
+    "Political Body"
+  ],
+  "brand": [
+    "Brand Vertical ",
+    "Brand Category",
+    "Brand"
+  ],
+  "events": [
+    "Holiday",
+    "Sports Events",
+    "Concert",
+    "Movie Festival",
+    "Award Show",
+    "Video Game Conference",
+    "Video Game Tournament ",
+    "NFL Football Game",
+    "Basketball Game",
+    "Hockey Game"
+  ]
+}

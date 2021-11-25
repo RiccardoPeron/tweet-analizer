@@ -1,0 +1,22 @@
+{
+  "products": [
+    "Product",
+    "Product Version",
+    "Multimedia Franchise"
+  ],
+  "person": [
+    "Person",
+    "Journalist",
+    "Politician"
+  ],
+  "politics": [
+    "Politician",
+    "Political Race",
+    "Political Body"
+  ],
+  "brand": [
+    "Brand Vertical ",
+    "Brand Category",
+    "Brand"
+  ]
+}
