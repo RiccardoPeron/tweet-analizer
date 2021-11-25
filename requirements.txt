@@ -1,4 +1,4 @@
 spacy
-plotly
+plotly==5.4.0
 ekphrasis
-nlkt
+nltk
