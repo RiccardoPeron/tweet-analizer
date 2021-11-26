@@ -1,9 +1,5 @@
 {
-  "products": [
-    "Product",
-    "Product Version",
-    "Multimedia Franchise"
-  ],
+  "product": ["Product", "Product Version", "Multimedia Franchise"],
   "entertainment": [
     "TV Shows",
     "TV Episodes",
@@ -22,7 +18,7 @@
     "Movie Festival",
     "Award Show",
     "Song",
-    "Musician ",
+    "Musician",
     "Actor",
     "Entertainment Personality",
     "Digital Creator",
@@ -34,7 +30,7 @@
     "Video Game Publisher",
     "Video Game Hardware",
     "Video Game Conference",
-    "Video Game Tournament ",
+    "Video Game Tournament",
     "eSports Team",
     "eSports Player",
     "Video Game Personality"
@@ -50,7 +46,7 @@
     "Sports Series",
     "Hockey Game",
     "Athlete",
-    "Sports Personality ",
+    "Sports Personality",
     "Coach"
   ],
   "person": [
@@ -69,17 +65,9 @@
     "eSports Player",
     "Politicians"
   ],
-  "politics": [
-    "Politicians",
-    "Political Race",
-    "Political Body"
-  ],
-  "brand": [
-    "Brand Vertical ",
-    "Brand Category",
-    "Brand"
-  ],
-  "events": [
+  "politics": ["Politician", "Political Race", "Political Body", "Politicians"],
+  "brand": ["Brand Vertical", "Brand Category", "Brand"],
+  "event": [
     "Holiday",
     "Sports Events",
     "Concert",
