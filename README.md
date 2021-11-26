@@ -19,3 +19,9 @@ Install the packages
 ```bash
 pip install -r requirements.txt
 ```
+
+Download the spaCy dataset
+
+```bash
+python -m spacy download it_core_news_lg
+```
