@@ -8,6 +8,11 @@ from ekphrasis.classes.preprocessor import TextPreProcessor
 from ekphrasis.dicts.emoticons import emoticons
 from spacy.symbols import LOWER, ORTH
 
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+       if isinstance(obj, set):
+          return list(obj)
+       return json.JSONEncoder.default(self, obj)
 
 class TweetPreprocessing:
 
@@ -35,6 +40,17 @@ class TweetPreprocessing:
         for case in special_cases:
             self.nlp.tokenizer.add_special_case(case[0], case[1])
 
+    def get_context_superclass(self, context_class, classes):
+        if context_class in classes['product']: return 'product'
+        if context_class in classes['entertainment']: return 'entertainment'
+        if context_class in classes['videogame']: return 'videogame'
+        if context_class in classes['sport']: return 'sport'
+        if context_class in classes['person']: return 'person'
+        if context_class in classes['politics']: return 'politics'
+        if context_class in classes['brand']: return 'brand'
+        if context_class in classes['event']: return 'event'
+        return 'other'
+
     def get_tweet_datas(self):
         '''
         from the list of tweets returns 4 lists containing text, ids, creation_date and context_annotaions for all the tweets
@@ -56,13 +72,22 @@ class TweetPreprocessing:
                     texts.append(tweet['text'])
                     ids.append(tweet['id'])
                     date.append(tweet['created_at'])
-                    context_annotations.append(
-                        [(annotation['domain']['name'], annotation['entity']['name']) for annotation in tweet['context_annotations']])
+
+                    #context_annotations.append([(annotation['domain']['name'], annotation['entity']['name']) for annotation in tweet['context_annotations']])
+                    classes = json.load(open('utilities/context_annotation_labels.json'))
+                    annotation_schema = {'product':set(), 'entertainment':set(), 'videogame':set(), 'sport':set(), 'person':set(), 'politics':set(), 'brand':set(), 'event':set(), 'other':set()}
+                    for annotation in tweet['context_annotations']:
+                        annotation_schema[self.get_context_superclass(annotation['domain']['name'], classes)].add(annotation['entity']['name'])
+                    context_annotations.append(annotation_schema)
+
                     try:
-                        entities_annotations.append(
-                            [(annotation['type'], annotation['normalized_text']) for annotation in tweet['entities']['annotations']])
+                        #entities_annotations.append([(annotation['type'], annotation['normalized_text']) for annotation in tweet['entities']['annotations']])
+                        annotation_schema = {'person': set(), 'place': set(), 'product':set(), 'organization':set(), 'others':set()}
+                        for annotation in tweet['entities']['annotations']:
+                            annotation_schema[annotation['type']].add(annotation['normalized_text'])
+                        entities_annotations.append(annotation_schema)
                     except:
-                        entities_annotations.append([])
+                        entities_annotations.append({'person': [], 'place': [], 'product':[], 'organization':[], 'others':[]})
         return texts, ids, date, context_annotations, entities_annotations
 
     def normalize_text(self, text):
@@ -243,7 +268,7 @@ class TweetPreprocessing:
           name of the output file
         '''
         with open('{}.json'.format(filename), 'w') as outfile:
-            json.dump(tweet_datas, outfile)
+            json.dump(tweet_datas, outfile, cls=SetEncoder)
 
 
 def preprocess(filename, outputname):
@@ -257,3 +282,9 @@ def preprocess(filename, outputname):
     data = preprocesser.generate_tweets_datas()
     preprocesser.generate_json(data, outputname)
     return data
+
+preprocess('milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json', 'JSON/milano_finanza_2016_sumup')
+preprocess('milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json', 'JSON/milano_finanza_2017_sumup')
+preprocess('milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json', 'JSON/milano_finanza_2018_sumup')
+preprocess('milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json', 'JSON/milano_finanza_2019_sumup')
+preprocess('milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json', 'JSON/milano_finanza_2020_sumup')
