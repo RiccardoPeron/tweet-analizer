@@ -2,3 +2,4 @@ spacy
 plotly
 ekphrasis
 nltk
+kaleido
