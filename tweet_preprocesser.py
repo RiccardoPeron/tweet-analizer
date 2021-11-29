@@ -82,12 +82,12 @@ class TweetPreprocessing:
 
                     try:
                         #entities_annotations.append([(annotation['type'], annotation['normalized_text']) for annotation in tweet['entities']['annotations']])
-                        annotation_schema = {'person': set(), 'place': set(), 'product':set(), 'organization':set(), 'others':set()}
+                        annotation_schema = {'Person': set(), 'Place': set(), 'Product':set(), 'Organization':set(), 'Other':set()}
                         for annotation in tweet['entities']['annotations']:
                             annotation_schema[annotation['type']].add(annotation['normalized_text'])
                         entities_annotations.append(annotation_schema)
                     except:
-                        entities_annotations.append({'person': [], 'place': [], 'product':[], 'organization':[], 'others':[]})
+                        entities_annotations.append({'Person': [], 'Place': [], 'Product':[], 'Organization':[], 'Other':[]})
         return texts, ids, date, context_annotations, entities_annotations
 
     def normalize_text(self, text):
@@ -178,8 +178,8 @@ class TweetPreprocessing:
         text: string
           text to analyze
         '''
-        labels = []
-        texts = []
+        #labels = []
+        #texts = []
         tokens = []
         nlp_text = self.nlp(text)
 
@@ -187,24 +187,28 @@ class TweetPreprocessing:
         ent_list = [token.ent_type_ for token in nlp_text]
         tokens_list = [token for token in nlp_text]
 
+        labels_structure = {'LOC':set(), 'PER':set(), 'ORG':set(), 'MISC':set()}
+
         for i in range(len(iob_list)):
             if iob_list[i] == 'B':
                 b = i
-                labels.append(ent_list[i])
+                #labels.append(ent_list[i])
+                label = ent_list[i]
                 i += 1
                 while i != len(iob_list) and iob_list[i] == 'I':
                     i += 1
                 text = ' '.join(
                     [token.lower_ for token in tokens_list[b:i]]).strip()
-                texts.append(text)
+                #texts.append(text)
                 tokens.append(text)
+                labels_structure[label].add(text)
             elif iob_list[i] == 'I':
                 continue
             else:
                 if not tokens_list[i].is_punct:
                     tokens.append(tokens_list[i].lower_)
 
-        return tokens, [(labels[i], texts[i]) for i in range(len(labels))]
+        return tokens, labels_structure #[(labels[i], texts[i]) for i in range(len(labels))]
 
     def generate_object(self, text, id, date, context_annotations, entities_annotations):
         '''
