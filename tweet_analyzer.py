@@ -63,16 +63,16 @@ class TweetAnalyzer:
         tweets = 0
 
         for tweet in self.data_full:
-            tweet_labels = set()
-            if tweet['entity_labels'] != []:
-                for touple in tweet['entity_labels']:
-                    all += 1
-                    if touple[1] not in tweet_labels:
-                        labels[touple[0]] += 1
-                        tweet_labels.add(touple[1])
+            twt = all
+            all += len(tweet['entity_labels']['LOC']) + len(tweet['entity_labels']['PER']) + len(tweet['entity_labels']['ORG']) + len(tweet['entity_labels']['MISC'])
+            labels['LOC'] += len(tweet['entity_labels']['LOC'])
+            labels['ORG'] += len(tweet['entity_labels']['ORG'])
+            labels['PER'] += len(tweet['entity_labels']['PER'])
+            labels['MISC'] += len(tweet['entity_labels']['MISC'])
 
-            if (len(tweet_labels)) > 0:
+            if all > twt:
                 tweets += 1
+
         print('ENTITY LABELS')
         print('\t numero totale di entity labels: {} - {:.4}%'.format(all,
               all/self.total_tokens*100))
@@ -90,12 +90,7 @@ class TweetAnalyzer:
         categories_stats = []
 
         for tweet in self.data_full:
-            tweet_labels = set()
-            if tweet['entity_labels'] != []:
-                for touple in tweet['entity_labels']:
-                    if touple[0] == label:
-                        all += 1
-                        tweet_labels.add(touple[1])
+            tweet_labels = tweet['entity_labels'][label]
 
             if (len(tweet_labels)) > 0:
                 tweets += 1
@@ -136,23 +131,18 @@ class TweetAnalyzer:
         ----------
         '''
         classes = json.load(open('utilities/context_annotation_labels.json'))
-        labels = list(classes.keys())
-        labels = Counter(labels)
+        labels_list = list(classes.keys())
+        labels = Counter(labels_list)
         labels = dict.fromkeys(labels, 0)
         all = 0
         tweets = 0
 
         for tweet in self.data_full:
-            tweet_classes = set()
-            if tweet['context_annotations'] != []:
-                for touple in tweet['context_annotations']:
-                    all += 1
-                    for class_ in labels:
-                        if touple[0] in classes[class_]:
-                            if touple[1] not in tweet_classes:
-                                labels[class_] += 1
-                                tweet_classes.add(class_)
-            if len(tweet_classes) > 0:
+            twt = all
+            for label in labels_list:
+                all += len(tweet['context_annotations'][label])
+                labels[label] += len(tweet['context_annotations'][label])
+            if all > twt:
                 tweets += 1
 
         print('CONTEXT ANNOTATIONS')
@@ -166,24 +156,6 @@ class TweetAnalyzer:
         self.total_tokens = all
         return self.sort_dict(labels)
 
-        # labels = json.load(open('context_annotation_labels.json'))
-        # categories = list(labels.keys())
-        # categories_stats = []
-        # all = 0
-        # for tweet in self.data_full:
-        #     # making a set of unique categories of a tweet
-        #     tweet_cats = set()
-        #     for touple in tweet['context_annotations']:
-        #         all += 1
-        #         for ct in categories:
-        #             if touple[0] in labels[ct]:
-        #                 tweet_cats.add(ct)
-        #     for cat in list(tweet_cats):
-        #         categories_stats.append(cat)
-
-        # print('> context annotations number: {}'.format(all))
-        # return self.get_sorted_dictionary(categories_stats)
-
     def get_context_label_stats(self, label):
         '''
         analyzes the tweet object and return the dictionary of the labels of the specified entity_annotations field associated with the number of tweets which the entity is in it
@@ -194,22 +166,17 @@ class TweetAnalyzer:
         file: json file
             file that contains the context annotations lables
         '''
-        classes = json.load(open('utilities/context_annotation_labels.json'))
         all = 0
         tweets = 0
         categories_stats = []
 
         for tweet in self.data_full:
-            tweet_classes = set()
-            if tweet['context_annotations'] != []:
-                for touple in tweet['context_annotations']:
-                    if touple[0] in classes[label]:
-                        all += 1
-                        tweet_classes.add(touple[1])
-            if len(tweet_classes) > 0:
+            tweet_labels = tweet['context_annotations'][label]
+
+            if len(tweet_labels) > 0:
                 tweets += 1
-                for class_ in tweet_classes:
-                    categories_stats.append(class_)
+                for entity in tweet_labels:
+                    categories_stats.append(entity)
 
         categories_stats = self.get_sorted_dictionary(categories_stats)
         print('\t numero totale di context annotations con label {}: {} - {: .4} %'.format(
@@ -220,36 +187,20 @@ class TweetAnalyzer:
             '\t numero di tweet che hanno almeno una context annotation con label {}: {} - {: .4} %'.format(label, tweets, tweets/self.total_tweets*100))
         return categories_stats
 
-        # labels = json.load(file)
-        # categories_stats = []
-
-        # for tweet in self.data_full:
-        #     label_values = set()
-        #     for touple in tweet['context_annotations']:
-        #         if touple[0] in labels[label]:
-        #             label_values.add(touple[1])
-        #     for val in label_values:
-        #         categories_stats.append(val)
-        # return self.get_sorted_dictionary(categories_stats)
-
     def get_entities_annotations_labels(self):
-        labels = ['Place', 'Product', 'Person', 'Organization', 'Other']
-        labels = Counter(labels)
+        labels_list = ['Place', 'Product', 'Person', 'Organization', 'Other']
+        labels = Counter(labels_list)
         labels = dict.fromkeys(labels, 0)
 
         all = 0
         tweets = 0
 
         for tweet in self.data_full:
-            tweet_classes = set()
-            if tweet['entities_annotations'] != []:
-                for touple in tweet['entities_annotations']:
-                    all += 1
-                    if touple[0] in labels:
-                        if touple[1] not in tweet_classes:
-                            labels[touple[0]] += 1
-                            tweet_classes.add(touple[1])
-            if len(tweet_classes) > 0:
+            twt = all
+            for label in labels_list:
+                all += len(tweet['entities_annotations'][label])
+                labels[label] += len(tweet['entities_annotations'][label])
+            if all>twt:
                 tweets += 1
 
         print('ENTITIES ANNOTATIONS')
@@ -263,34 +214,18 @@ class TweetAnalyzer:
         self.total_tokens = all
         return self.sort_dict(labels)
 
-        # for tweet in self.data_full:
-        #     tweet_cats = set()
-        #     for touple in tweet['entities_annotations']:
-        #         all += 1
-        #         if touple[0] in categories:
-        #             tweet_cats.add(touple[0])
-        #     for cat in list(tweet_cats):
-        #         categories_stats.append(cat)
-
-        # print('> context labels number: {}'.format(all))
-        # return self.get_sorted_dictionary(categories_stats)
-
     def get_entities_label_stats(self, label):
         all = 0
         tweets = 0
         categories_stats = []
 
         for tweet in self.data_full:
-            tweet_classes = set()
-            if tweet['entities_annotations'] != []:
-                for touple in tweet['entities_annotations']:
-                    if touple[0] == label:
-                        all += 1
-                        tweet_classes.add(touple[1])
-            if len(tweet_classes) > 0:
+            tweet_labels = tweet['entities_annotations'][label]
+
+            if len(tweet_labels) > 0:
                 tweets += 1
-                for class_ in tweet_classes:
-                    categories_stats.append(class_)
+                for entity in tweet_labels:
+                    categories_stats.append(entity)
 
         categories_stats = self.get_sorted_dictionary(categories_stats)
         print('\t numero totale di context annotations con label {}: {} - {: .4} %'.format(
@@ -300,16 +235,6 @@ class TweetAnalyzer:
         print(
             '\t numero di tweet che hanno almeno una context annotation con label {}: {} - {: .4} %'.format(label, tweets, tweets/self.total_tweets*100))
         return categories_stats
-        # categories_stats = []
-
-        # for tweet in self.data_full:
-        #     tweet_cats = set()
-        #     for touple in tweet['entities_annotations']:
-        #         if touple[0] == label:
-        #             tweet_cats.add(touple[1])
-        #     for cat in list(tweet_cats):
-        #         categories_stats.append(cat)
-        # return self.get_sorted_dictionary(categories_stats)
 
     def sort_dict(self, myDict, reverse_=True):
         '''
@@ -536,9 +461,9 @@ def analyze(filename):
     analyzer.print_line_graph(analyzer.get_context_label_stats(
         'videogame'), 'IMG/figure 14: videogame distribution')
     analyzer.print_line_graph(analyzer.get_context_label_stats(
-        'products'), 'IMG/figure 15: products distribution')
+        'product'), 'IMG/figure 15: products distribution')
     analyzer.print_line_graph(analyzer.get_context_label_stats(
-        'events'), 'IMG/figure 16: events distribution')
+        'event'), 'IMG/figure 16: events distribution')
 
     print('----')
     analyzer.print_line_graph(analyzer.get_entities_annotations_labels(
@@ -554,3 +479,5 @@ def analyze(filename):
         'Person'), 'IMG/figure 21: Person entity annotations distribution')
     analyzer.print_line_graph(analyzer.get_entities_label_stats(
         'Other'), 'IMG/figure 22: Other entity annotations distribution')
+
+analyze('JSON/milano_finanza_2018_sumup.json')
