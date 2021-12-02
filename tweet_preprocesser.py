@@ -59,6 +59,9 @@ class TweetPreprocessing:
         for case in special_cases:
             self.nlp.tokenizer.add_special_case(case[0], case[1])
 
+    def set_alias(self, word):
+        print()
+
     def get_context_superclass(self, context_class, classes):
         if context_class in classes["product"]:
             return "product"
@@ -164,11 +167,14 @@ class TweetPreprocessing:
           text to normalize
         """
         text = self.text_processor.pre_process_doc(text)
+        return text.lower()
+
+    def remove_punctuation(self, text):
         punct = [".", ",", ";", ":", "!", "?", "(", ")"]
         for w in text:
             if w in punct:
                 text = text.replace(w, "")
-        return text.lower()
+        return text
 
     def clean_tags(self, text):
         """
@@ -217,7 +223,7 @@ class TweetPreprocessing:
                 elif word == "<percent>":
                     percent.append(text[i])
                     norm_text = norm_text.replace(word, text[i])
-        return hashtag, money, percent
+        return hashtag, money, percent, norm_text
 
     def token_to_string(self, token_list, type="l"):
         """
@@ -297,9 +303,12 @@ class TweetPreprocessing:
           context_annotations list of the tweet
         """
         normalized_text = self.normalize_text(text)
-        hashtags, money, percent = self.find_normalized(text, normalized_text)
+        hashtags, money, percent, normalized_text = self.find_normalized(
+            text, normalized_text
+        )
         normalized_text = self.clean_tags(normalized_text)
         tokens, labels = self.get_tweet_tokens_and_argouments(normalized_text)
+        normalized_text = self.remove_punctuation(normalized_text)
 
         return {
             "id": id,
@@ -373,23 +382,23 @@ def preprocess(filename, outputname):
     return data
 
 
-preprocess(
-    "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2016_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2017_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2018_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2019_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2020_sumup",
-)
+# preprocess(
+#     "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json",
+#     "JSON/milano_finanza_2016_sumup",
+# )
+# preprocess(
+#     "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json",
+#     "JSON/milano_finanza_2017_sumup",
+# )
+# preprocess(
+#     "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json",
+#     "JSON/milano_finanza_2018_sumup",
+# )
+# preprocess(
+#     "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json",
+#     "JSON/milano_finanza_2019_sumup",
+# )
+# preprocess(
+#     "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json",
+#     "JSON/milano_finanza_2020_sumup",
+# )
