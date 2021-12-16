@@ -5,10 +5,10 @@ import nltk
 import plotly.graph_objects as go
 from nltk.corpus import stopwords
 
-import tweet_analyzer
-import tweet_preprocesser
-from tweet_analyzer import TweetAnalyzer as TA
-from tweet_preprocesser import TweetPreprocessing as TP
+# import tweet_analyzer
+# import tweet_preprocesser
+# from tweet_analyzer import TweetAnalyzer as TA
+# from tweet_preprocesser import TweetPreprocessing as TP
 
 # tweet_analyzer.analyze('tweet_from_2016_to_2020.json')
 
@@ -72,8 +72,17 @@ def wrap_tweet(filenames, outname):
         json.dump(tweet_total, outfile)
 
 
-# wrap_tweet(['JSON/milano_finanza_2016_sumup.json', 'JSON/milano_finanza_2017_sumup.json', 'JSON/milano_finanza_2018_sumup.json','JSON/milano_finanza_2019_sumup.json', 'JSON/milano_finanza_2020_sumup.json'], 'tweet_from_2016_to_2020')
+wrap_tweet(
+    [
+        "JSON/milano_finanza_2016_sumup.json",
+        "JSON/milano_finanza_2017_sumup.json",
+        "JSON/milano_finanza_2018_sumup.json",
+        "JSON/milano_finanza_2019_sumup.json",
+        "JSON/milano_finanza_2020_sumup.json",
+    ],
+    "tweet_from_2016_to_2020",
+)
 
 
-analizer = TA(open("tweet_from_2016_to_2020.json"))
+# analizer = TA(open("tweet_from_2016_to_2020.json"))
 # analizer.print_trends_graph('prova', [['brexit'], ['piazza affari'], ['borsa'], ['brexit', 'accordo'], ['brexit', 'ue'], ['brexit', 'sterlina'], ['brexit', 'may'], ['brexit', 'dopo'], ['brexit', 'no'], ['brexit', 'borse'], ['brexit', 'piazza affari'], ['brexit', 'hard']])
