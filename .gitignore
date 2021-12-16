@@ -1,3 +1,5 @@
 twitter-analizer-venv/
 IMG/
 __pycache__/
+.vscode/
+example.html

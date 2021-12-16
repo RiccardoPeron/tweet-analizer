@@ -3,3 +3,6 @@ plotly
 ekphrasis
 nltk
 kaleido
+networkx
+pyvis
+tqdm
