@@ -166,7 +166,7 @@ class RelateWordExplorer:
             myGraph.add_node(word)
             myGraph = self.fill_correlation_graph_ent(word, myGraph, mode)
         if mode == "connect":
-            myGraph = self.trim_graph(myGraph)
+            myGraph = self.trim_graph(myGraph, 3)
         return myGraph
 
     def fill_correlation_graph(self, word, graph, mode, analized=[]):
@@ -175,14 +175,14 @@ class RelateWordExplorer:
             for token in correlate_tokens:
                 if token != word and token not in list(graph.nodes):
                     graph.add_node(token, ids=correlate_ids)
-                    print(f"> add node: {token}")
+                    # print(f"> add node: {token}")
                     self.fill_correlation_graph(token, graph, "depth")
                     graph.add_edge(word, token)
         if mode == "breadth":
             for token in correlate_tokens:
                 if token != word and token not in list(graph.nodes):
                     graph.add_node(token)
-                    print(f"> add node: {token}")
+                    # print(f"> add node: {token}")
                     graph.add_edge(word, token)
             for token in correlate_tokens:
                 if token != word and token not in analized:
@@ -199,14 +199,14 @@ class RelateWordExplorer:
             for i, ent in enumerate(correlate_ent):
                 if ent != entity and ent not in list(graph.nodes):
                     graph.add_node(ent)
-                    print(f"> add node: {ent}")
+                    # print(f"> add node: {ent}")
                     self.fill_correlation_graph_ent(ent, graph, "depth")
                     graph.add_edge(ent, entity, weight=correlate_weights[i])
         if mode == "breadth":
             for i, ent in enumerate(correlate_ent):
                 if ent != entity and ent not in list(graph.nodes):
                     graph.add_node(ent)
-                    print(f"> add node: {ent}")
+                    # print(f"> add node: {ent}")
                     graph.add_edge(ent, entity, weight=correlate_weights[i])
             for ent in correlate_ent:
                 if ent != entity and ent not in analized:
@@ -216,7 +216,7 @@ class RelateWordExplorer:
             for i, ent in enumerate(correlate_ent):
                 if ent != entity and ent not in list(graph.nodes):
                     graph.add_node(ent)
-                    print(f"> add node: {ent}")
+                    # print(f"> add node: {ent}")
                     graph.add_edge(ent, entity, weight=correlate_weights[i])
                     self.fill_correlation_graph_ent(ent, graph, "connect")
                 else:
@@ -252,8 +252,10 @@ class RelateWordExplorer:
         net.show("example.html")
 
 
-file = open("JSON/milano_finanza_2016_sumup.json")
-explorer = RelateWordExplorer(file)
-G = nx.Graph()
-G = explorer.create_correlation_graph("brexit", "entity", "connect")
-explorer.print_graph(G)
+def explore(filename, entity, data, mode):
+    file = open(filename)
+    explorer = RelateWordExplorer(file)
+    G = nx.Graph()
+    print("creating graph...")
+    G = explorer.create_correlation_graph(entity, data, mode)
+    explorer.print_graph(G)
