@@ -8,6 +8,8 @@ from ekphrasis.classes.preprocessor import TextPreProcessor
 from ekphrasis.dicts.emoticons import emoticons
 from spacy.symbols import LOWER, ORTH
 
+from tqdm import tqdm
+
 
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -123,8 +125,8 @@ def get_context_superclass(context_class, classes):
 
 
 def normalizer(text):
-    text = re.sub("[\+|-]*[0-9]*[.|,][0-9]*%", "<percent>", text)
-    text = re.sub("https[:|0-9|a-z|A-Z|.|/]*", "<url>", text)
+    text = re.sub("[\+|-]*[0-9]*[\.|,][0-9]*%", "<percent>", text)
+    text = re.sub("https[:|0-9|a-z|A-Z|\.|/]*", "<url>", text)
     text = re.sub("@[a-z|A-Z]*", "<user>", text)
     text = re.sub("#[a-z|A-Z]*", "<hashtag>", text)
     text = re.sub("[(|)|/|?|!|:]", "", text)
@@ -252,7 +254,7 @@ def generate_tweets_datas(TP):
         context_annotaions,
         entities_annotations,
     ) = get_tweet_data(TP)
-    for i in range(len(texts)):
+    for i in tqdm(range(len(texts))):
         tweets.append(
             generate_object(
                 texts[i],
@@ -283,25 +285,30 @@ def generate_json(tweet_datas, filename):
     print("Completed")
 
 
-def preprocess(file):
+def preprocess(file, filename):
     TP = TweeetPreprocesser(file)
     tweets = generate_tweets_datas(TP)
-    generate_json(tweets, "JSON/milano_finanza_2016_sumup.json")
+    generate_json(tweets, filename)
     return tweets
 
 
 preprocess(
-    "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json"
+    "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json",
+    "JSON/milano_finanza_2016_sumup",
 )
 preprocess(
-    "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json"
+    "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json",
+    "JSON/milano_finanza_2017_sumup",
 )
 preprocess(
-    "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json"
+    "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json",
+    "JSON/milano_finanza_2018_sumup",
 )
 preprocess(
-    "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json"
+    "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json",
+    "JSON/milano_finanza_2019_sumup",
 )
 preprocess(
-    "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json"
+    "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json",
+    "JSON/milano_finanza_2020_sumup",
 )
