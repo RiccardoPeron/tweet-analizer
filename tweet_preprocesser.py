@@ -265,7 +265,7 @@ def generate_tweets_datas(TP):
                 TP,
             )
         )
-
+    tweets.reverse()
     return tweets
 
 
