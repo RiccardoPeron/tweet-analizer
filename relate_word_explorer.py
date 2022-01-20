@@ -1,10 +1,12 @@
 import json
 from collections import Counter
+from datetime import datetime
 
 import networkx as nx
-from networkx.algorithms.coloring.greedy_coloring import greedy_color
 import nltk
 import plotly.graph_objects as go
+from dateutil.relativedelta import relativedelta
+from networkx.algorithms.coloring.greedy_coloring import greedy_color
 from nltk.corpus import stopwords
 from pyvis.network import Network
 
@@ -12,6 +14,12 @@ from pyvis.network import Network
 class RelateWordExplorer:
     def __init__(self, file):
         self.dataset = json.load(file)
+        self.start = datetime.fromisoformat(self.dataset[0]["created_at"]).replace(
+            tzinfo=None
+        )
+        self.end = datetime.fromisoformat(
+            self.dataset[len(self.dataset) - 1]["created_at"]
+        ).replace(tzinfo=None)
         nltk.download("stopwords")
         self.stop_words = set(stopwords.words("italian"))
         self.stop_words.add("l'")
@@ -56,32 +64,42 @@ class RelateWordExplorer:
         correlate_tokens = list(correlate_tokens)[0:4]
         return correlate_ids, correlate_tokens
 
-    def search_correlate_entities(self, entity, tool):
+    def search_correlate_entities(self, entity, tool, start="", end=""):
         correlate = []
+        if start == "":
+            start = self.start
+        if end == "":
+            end = self.end
 
         if tool == "spacy":
             for tweet in self.dataset:
-                entities = []
-                isent = False
-                for ent in tweet["entity_labels"]["PER"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entity_labels"]["LOC"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entity_labels"]["ORG"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entity_labels"]["MISC"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                if isent:
-                    for ent in entities:
-                        correlate.append(ent)
+                if (
+                    datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
+                    >= start
+                    and datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
+                    <= end
+                ):
+                    entities = []
+                    isent = False
+                    for ent in tweet["entity_labels"]["PER"]:
+                        if entity == ent:
+                            isent = True
+                        entities.append(ent)
+                    for ent in tweet["entity_labels"]["LOC"]:
+                        if entity == ent:
+                            isent = True
+                        entities.append(ent)
+                    for ent in tweet["entity_labels"]["ORG"]:
+                        if entity == ent:
+                            isent = True
+                        entities.append(ent)
+                    for ent in tweet["entity_labels"]["MISC"]:
+                        if entity == ent:
+                            isent = True
+                        entities.append(ent)
+                    if isent:
+                        for ent in entities:
+                            correlate.append(ent)
         if tool == "context_annotations":
             for tweet in self.dataset:
                 entities = []
@@ -251,6 +269,42 @@ class RelateWordExplorer:
         net.from_nx(G)
         net.show("example.html")
 
+    def get_first_occurrence(self, entity):
+        for tweet in self.dataset:
+            for spacy_class in ["PER", "LOC", "ORG", "MISC"]:
+                for ent in tweet["entity_labels"][spacy_class]:
+                    if ent == entity:
+                        return tweet["created_at"]
+
+    def monthly_correlation(self, entity):
+        fig = go.Figure()
+
+        first_occurrence = self.get_first_occurrence(entity)
+        first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
+
+        n_months = (self.end.year - first_occurrence.year) * 12 + (
+            self.end.month - first_occurrence.month
+        )
+
+        for month in range(n_months):
+            date_start = self.start + relativedelta(months=month)
+            date_end = self.start + relativedelta(months=month + 1)
+
+            month_correlate = self.search_correlate_entities(
+                entity, "spacy", date_start, date_end
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=list(month_correlate.keys())[:10],
+                    y=list(month_correlate.values())[:10],
+                    mode="markers",
+                )
+            )
+
+        fig.write_image("./{}.png".format("IMG/aaaaaaaaaaa"))
+        print("> printed {}".format("aaaaaaaaaaaa"))
+
 
 def explore(filename, entity, data, mode):
     file = open(filename)
@@ -259,3 +313,12 @@ def explore(filename, entity, data, mode):
     print("creating graph...")
     G = explorer.create_correlation_graph(entity, data, mode)
     explorer.print_graph(G)
+
+
+def explore2(filename, entity):
+    file = open(filename)
+    explorer = RelateWordExplorer(file)
+    explorer.monthly_correlation(entity)
+
+
+explore2("tweet_from_2016_to_2020.json", "covid")
