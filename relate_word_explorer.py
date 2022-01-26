@@ -294,16 +294,33 @@ class RelateWordExplorer:
                 entity, "spacy", date_start, date_end
             )
 
-            fig.add_trace(
-                go.Scatter(
-                    x=list(month_correlate.keys())[:10],
-                    y=list(month_correlate.values())[:10],
-                    mode="markers",
-                )
-            )
+            val = list(month_correlate.values())
+            key = list(month_correlate.keys())
 
-        fig.write_image("./{}.png".format("IMG/aaaaaaaaaaa"))
-        print("> printed {}".format("aaaaaaaaaaaa"))
+            for i in range(len(month_correlate)):
+                found = False
+
+                for j in range(len(fig.data)):
+                    if fig.data[j].name not in key:
+                        fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
+                        fig.data[j].y = tuple(list(fig.data[j].y) + [0])
+
+                    elif fig.data[j].name == key[i]:
+                        found = True
+                        fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
+                        fig.data[j].y = tuple(list(fig.data[j].y) + [val[i]])
+                        break
+
+                if not found:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[date_start],
+                            y=[val[i]],
+                            mode="lines+markers",
+                            name=key[i],
+                        )
+                    )
+        fig.show()
 
 
 def explore(filename, entity, data, mode):
@@ -318,7 +335,8 @@ def explore(filename, entity, data, mode):
 def explore2(filename, entity):
     file = open(filename)
     explorer = RelateWordExplorer(file)
+    print(len(explorer.search_tweets(entity)))
     explorer.monthly_correlation(entity)
 
 
-explore2("tweet_from_2016_to_2020.json", "covid")
+explore2("tweet_from_2016_to_2020.json", "italia")
