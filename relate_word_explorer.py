@@ -10,6 +10,8 @@ from networkx.algorithms.coloring.greedy_coloring import greedy_color
 from nltk.corpus import stopwords
 from pyvis.network import Network
 
+from tqdm import tqdm
+
 
 class RelateWordExplorer:
     def __init__(self, file):
@@ -49,19 +51,30 @@ class RelateWordExplorer:
             tweet["id"] for tweet in self.dataset if word in tweet["tokenized_text"]
         ]
 
-    def search_correlate_tokens(self, word):
+    def search_correlate_tokens(self, word, start="", end=""):
+        if start == "":
+            start = self.start
+        if end == "":
+            end = self.end
+
         word = word.lower()
         correlate_ids = []
         correlate_tokens = []
         for tweet in self.dataset:
-            if word in tweet["tokenized_text"]:
-                for token in tweet["tokenized_text"]:
-                    if token not in self.stop_words:
-                        correlate_tokens.append(token)
-                        correlate_ids.append(tweet["id"])
+            if (
+                datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
+                >= start
+                and datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
+                <= end
+            ):
+                if word in tweet["tokenized_text"]:
+                    for token in tweet["tokenized_text"]:
+                        if token not in self.stop_words:
+                            correlate_tokens.append(token)
+                            correlate_ids.append(tweet["id"])
         correlate_tokens = Counter(correlate_tokens)
         correlate_tokens = self.sort_dict(correlate_tokens)
-        correlate_tokens = list(correlate_tokens)[0:4]
+        # correlate_tokens = list(correlate_tokens)[0:4]
         return correlate_ids, correlate_tokens
 
     def search_correlate_entities(self, entity, tool, start="", end=""):
@@ -269,35 +282,52 @@ class RelateWordExplorer:
         net.from_nx(G)
         net.show("example.html")
 
-    def get_first_occurrence(self, entity):
+    def get_first_entity_occurrence(
+        self,
+        entity,
+    ):
         for tweet in self.dataset:
             for spacy_class in ["PER", "LOC", "ORG", "MISC"]:
                 for ent in tweet["entity_labels"][spacy_class]:
                     if ent == entity:
                         return tweet["created_at"]
 
-    def monthly_correlation(self, entity):
+    def get_first_token_occurrence(self, token):
+        for tweet in self.dataset:
+            if token in tweet["tokenized_text"]:
+                return tweet["created_at"]
+
+    def monthly_correlation(self, entity, mode="token"):
         fig = go.Figure()
 
-        first_occurrence = self.get_first_occurrence(entity)
+        if mode == "token":
+            first_occurrence = self.get_first_token_occurrence(entity)
+        else:
+            first_occurrence = self.get_first_entity_occurrence(entity)
+
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
 
         n_months = (self.end.year - first_occurrence.year) * 12 + (
             self.end.month - first_occurrence.month
         )
 
-        for month in range(n_months):
-            date_start = self.start + relativedelta(months=month)
-            date_end = self.start + relativedelta(months=month + 1)
+        for month in tqdm(range(n_months)):
+            date_start = first_occurrence + relativedelta(months=month)
+            date_end = first_occurrence + relativedelta(months=month + 1)
 
-            month_correlate = self.search_correlate_entities(
-                entity, "spacy", date_start, date_end
-            )
+            if mode == "token":
+                _, month_correlate = self.search_correlate_tokens(
+                    entity, date_start, date_end
+                )
+            else:
+                month_correlate = self.search_correlate_entities(
+                    entity, "spacy", date_start, date_end
+                )
 
-            val = list(month_correlate.values())
-            key = list(month_correlate.keys())
+            val = list(month_correlate.values())[:5]
+            key = list(month_correlate.keys())[:5]
 
-            for i in range(len(month_correlate)):
+            for i in range(min(len(month_correlate), 5)):
                 found = False
 
                 for j in range(len(fig.data)):
@@ -336,7 +366,7 @@ def explore2(filename, entity):
     file = open(filename)
     explorer = RelateWordExplorer(file)
     print(len(explorer.search_tweets(entity)))
-    explorer.monthly_correlation(entity)
+    explorer.monthly_correlation(entity, mode="entity")
 
 
-explore2("tweet_from_2016_to_2020.json", "italia")
+explore2("tweet_from_2016_to_2020.json", "covid-19")
