@@ -209,9 +209,9 @@ def get_tokens_arg(text, TP):
                 else:
                     break
             labels_structure[ent_type].add(set_alias((" ".join(token)).strip(), TP))
-            tokenized_text.append((" ".join(token)).strip())
+            tokenized_text.append(set_alias((" ".join(token)).strip(), TP))
         elif iobs[i] == "O" and tokens[i] not in [".", ",", ":", ";"]:
-            tokenized_text.append(tokens[i])
+            tokenized_text.append(set_alias(tokens[i], TP))
 
     return tokenized_text, labels_structure
 
