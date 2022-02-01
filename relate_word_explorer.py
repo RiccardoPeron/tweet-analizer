@@ -9,7 +9,6 @@ from dateutil.relativedelta import relativedelta
 from networkx.algorithms.coloring.greedy_coloring import greedy_color
 from nltk.corpus import stopwords
 from pyvis.network import Network
-
 from tqdm import tqdm
 
 
@@ -297,8 +296,9 @@ class RelateWordExplorer:
             if token in tweet["tokenized_text"]:
                 return tweet["created_at"]
 
-    def monthly_correlation(self, entity, mode="token"):
+    def monthly_correlation(self, entity, day_span="15", mode="token"):
         fig = go.Figure()
+        fig.update_layout(title=entity + " (" + mode + ")")
 
         if mode == "token":
             first_occurrence = self.get_first_token_occurrence(entity)
@@ -307,13 +307,13 @@ class RelateWordExplorer:
 
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
 
-        n_months = (self.end.year - first_occurrence.year) * 12 + (
-            self.end.month - first_occurrence.month
-        )
+        n_iterations = (self.end - self.start).days // day_span
 
-        for month in tqdm(range(n_months)):
-            date_start = first_occurrence + relativedelta(months=month)
-            date_end = first_occurrence + relativedelta(months=month + 1)
+        for iter in tqdm(range(n_iterations)):
+            date_start = first_occurrence + relativedelta(days=iter * day_span)
+            date_end = first_occurrence + relativedelta(
+                days=(iter * day_span) + day_span
+            )
 
             if mode == "token":
                 _, month_correlate = self.search_correlate_tokens(
@@ -366,7 +366,8 @@ def explore2(filename, entity):
     file = open(filename)
     explorer = RelateWordExplorer(file)
     print(len(explorer.search_tweets(entity)))
-    explorer.monthly_correlation(entity, mode="entity")
+    explorer.monthly_correlation(entity, mode="token")
 
 
+# explore("tweet_from_2016_to_2020.json", "covid-19", "entity", "breadth")
 explore2("tweet_from_2016_to_2020.json", "covid-19")
