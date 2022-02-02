@@ -67,7 +67,7 @@ class RelateWordExplorer:
                 <= end
             ):
                 if word in tweet["tokenized_text"]:
-                    for token in tweet["tokenized_text"]:
+                    for token in tweet["nouns_verbs"]:
                         if token not in self.stop_words:
                             correlate_tokens.append(token)
                             correlate_ids.append(tweet["id"])
@@ -91,27 +91,37 @@ class RelateWordExplorer:
                     and datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
                     <= end
                 ):
-                    entities = []
-                    isent = False
-                    for ent in tweet["entity_labels"]["PER"]:
-                        if entity == ent:
-                            isent = True
-                        entities.append(ent)
-                    for ent in tweet["entity_labels"]["LOC"]:
-                        if entity == ent:
-                            isent = True
-                        entities.append(ent)
-                    for ent in tweet["entity_labels"]["ORG"]:
-                        if entity == ent:
-                            isent = True
-                        entities.append(ent)
-                    for ent in tweet["entity_labels"]["MISC"]:
-                        if entity == ent:
-                            isent = True
-                        entities.append(ent)
-                    if isent:
-                        for ent in entities:
+                    if entity in tweet["tokenized_text"]:
+                        for ent in tweet["entity_labels"]["PER"]:
                             correlate.append(ent)
+                        for ent in tweet["entity_labels"]["LOC"]:
+                            correlate.append(ent)
+                        for ent in tweet["entity_labels"]["ORG"]:
+                            correlate.append(ent)
+                        for ent in tweet["entity_labels"]["MISC"]:
+                            correlate.append(ent)
+
+                    ## entities = []
+                    ## isent = False
+                    ## for ent in tweet["entity_labels"]["PER"]:
+                    ##     if entity == ent:
+                    ##         isent = True
+                    ##     entities.append(ent)
+                    ## for ent in tweet["entity_labels"]["LOC"]:
+                    ##     if entity == ent:
+                    ##         isent = True
+                    ##     entities.append(ent)
+                    ## for ent in tweet["entity_labels"]["ORG"]:
+                    ##     if entity == ent:
+                    ##         isent = True
+                    ##     entities.append(ent)
+                    ## for ent in tweet["entity_labels"]["MISC"]:
+                    ##     if entity == ent:
+                    ##         isent = True
+                    ##     entities.append(ent)
+                    ## if isent:
+                    ##     for ent in entities:
+                    ##         correlate.append(ent)
         if tool == "context_annotations":
             for tweet in self.dataset:
                 entities = []
@@ -296,14 +306,11 @@ class RelateWordExplorer:
             if token in tweet["tokenized_text"]:
                 return tweet["created_at"]
 
-    def monthly_correlation(self, entity, day_span="15", mode="token"):
+    def monthly_correlation(self, entity, day_span=15, mode="token"):
         fig = go.Figure()
         fig.update_layout(title=entity + " (" + mode + ")")
 
-        if mode == "token":
-            first_occurrence = self.get_first_token_occurrence(entity)
-        else:
-            first_occurrence = self.get_first_entity_occurrence(entity)
+        first_occurrence = self.get_first_token_occurrence(entity)
 
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
 
@@ -366,7 +373,7 @@ def explore2(filename, entity):
     file = open(filename)
     explorer = RelateWordExplorer(file)
     print(len(explorer.search_tweets(entity)))
-    explorer.monthly_correlation(entity, mode="token")
+    explorer.monthly_correlation(entity, mode="entity")
 
 
 # explore("tweet_from_2016_to_2020.json", "covid-19", "entity", "breadth")
