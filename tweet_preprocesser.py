@@ -187,6 +187,7 @@ def split_sentences(text):
 
 def get_tokens_arg(text, TP):
     tokenized_text = []
+    nouns_vetbs = []
 
     # sentences = split_sentences(text)
     # for text in sentences:
@@ -196,6 +197,10 @@ def get_tokens_arg(text, TP):
     iobs = [token.ent_iob_ for token in nlp_text]
     tokens = [token.lower_ for token in nlp_text]
     ents = [token.ent_type_ for token in nlp_text]
+    nv = [token.pos_ for token in nlp_text]
+    lemmatization = [
+        token.lemma_ for token in nlp_text if token.pos_ in ["NOUN", "PROPN", "VERB"]
+    ]
 
     for i in range(len(iobs)):
         token = []
@@ -210,17 +215,21 @@ def get_tokens_arg(text, TP):
                     break
             labels_structure[ent_type].add(set_alias((" ".join(token)).strip(), TP))
             tokenized_text.append(set_alias((" ".join(token)).strip(), TP))
+            if nv[i] in ["NOUN", "PROPN", "VERB"]:
+                nouns_vetbs.append(set_alias((" ".join(token)).strip(), TP))
         elif iobs[i] == "O" and tokens[i] not in [".", ",", ":", ";"]:
             tokenized_text.append(set_alias(tokens[i], TP))
+            if nv[i] in ["NOUN", "PROPN", "VERB"]:
+                nouns_vetbs.append(set_alias(tokens[i], TP))
 
-    return tokenized_text, labels_structure
+    return tokenized_text, labels_structure, nouns_vetbs, lemmatization
 
 
 def generate_object(text, id, date, context_annotations, entities_annotations, TP):
     ntext = normalizer(text)
     p, h, m, nt = extract_tag(text, ntext)
     nt = remove_tag(nt)
-    tokens, labels = get_tokens_arg(nt, TP)
+    tokens, labels, nv, lemma = get_tokens_arg(nt, TP)
     nt.lower()
 
     return {
@@ -229,6 +238,8 @@ def generate_object(text, id, date, context_annotations, entities_annotations, T
         "text": text,
         "normalized_text": nt,
         "tokenized_text": tokens,
+        "nouns_verbs": nv,
+        "lemmatization": lemma,
         "hashtags": h,
         "money": m,
         "percent": p,
