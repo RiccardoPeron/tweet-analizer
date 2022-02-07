@@ -2,6 +2,7 @@ import json
 import re
 import string
 from datetime import datetime
+import os
 
 import spacy
 from ekphrasis.classes.preprocessor import TextPreProcessor
@@ -22,6 +23,7 @@ class TweeetPreprocesser:
     def __init__(
         self,
         file,
+        folder,
         nlp=spacy.load(
             "it_core_news_lg",
             exclude=["tagger", "parser", "lemmatizer", "textcat", "custom"],
@@ -31,6 +33,7 @@ class TweeetPreprocesser:
     ) -> None:
         print(f"\n> Preprocessing {file}...")
         file = open(file)
+        self.folder = folder
         self.dataset = json.load(file)
         self.start = datetime.fromisoformat(start_).replace(tzinfo=None)
         self.end = datetime.fromisoformat(end_).replace(tzinfo=None)
@@ -233,6 +236,7 @@ def generate_object(text, id, date, context_annotations, entities_annotations, T
     nt.lower()
 
     return {
+        "source": TP.folder,
         "id": id,
         "created_at": date,
         "text": text,
@@ -296,30 +300,18 @@ def generate_json(tweet_datas, filename):
     print("Completed")
 
 
-def preprocess(file, filename):
-    TP = TweeetPreprocesser(file)
-    tweets = generate_tweets_datas(TP)
-    generate_json(tweets, filename)
-    return tweets
+def preprocess(folder_name):
+    path = os.getcwd() + "/" + folder_name + "/"
+    for dir in os.listdir(path):
+        fpath = path + dir + "/"
+        for i, file in enumerate(os.listdir(fpath)):
+            try:
+                os.mkdir("JSON/" + str(i))
+            except:
+                pass
+            TP = TweeetPreprocesser(fpath + file, dir)
+            tweets = generate_tweets_datas(TP)
+            generate_json(tweets, "JSON/" + str(i) + "/" + dir + "_sumup")
 
 
-preprocess(
-    "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2016_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2017_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2018_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2019_sumup",
-)
-preprocess(
-    "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json",
-    "JSON/milano_finanza_2020_sumup",
-)
+preprocess("sources")
