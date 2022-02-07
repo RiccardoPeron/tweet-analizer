@@ -1,9 +1,12 @@
 import json
 from collections import Counter
+import os
 
 import nltk
 import plotly.graph_objects as go
 from nltk.corpus import stopwords
+
+from tqdm import tqdm
 
 # import tweet_analyzer
 # import tweet_preprocesser
@@ -13,75 +16,51 @@ from nltk.corpus import stopwords
 # tweet_analyzer.analyze('tweet_from_2016_to_2020.json')
 
 
-def preprocess_all():
-    print("\n --- \n")
-    mf_2016 = tweet_preprocesser.preprocess(
-        "milano_finanza/milano_finanza_2016-01-01T00_00_00Z_2016-12-31T23_59_59Z.json",
-        "JSON/milano_finanza_2016_sumup",
-    )
-    print("\n --- \n")
-    mf_2017 = tweet_preprocesser.preprocess(
-        "milano_finanza/milano_finanza_2017-01-01T00_00_00Z_2017-12-31T23_59_59Z.json",
-        "JSON/milano_finanza_2017_sumup",
-    )
-    print("\n --- \n")
-    mf_2018 = tweet_preprocesser.preprocess(
-        "milano_finanza/milano_finanza_2018-01-01T00_00_00Z_2018-12-31T23_59_59Z.json",
-        "JSON/milano_finanza_2018_sumup",
-    )
-    print("\n --- \n")
-    mf_2019 = tweet_preprocesser.preprocess(
-        "milano_finanza/milano_finanza_2019-01-01T00_00_00Z_2019-12-31T23_59_59Z.json",
-        "JSON/milano_finanza_2019_sumup",
-    )
-    print("\n --- \n")
-    mf_2020 = tweet_preprocesser.preprocess(
-        "milano_finanza/milano_finanza_2020-01-01T00_00_00Z_2020-12-31T23_59_59Z.json",
-        "JSON/milano_finanza_2020_sumup",
-    )
-    print("\n --- \n")
-    print("--- \n")
-
-
-def analyze_all():
-    print("\n> 2016")
-    analyzer = TA(open("milano_finanza_2016_sumup.json"))
-    analyzer.get_tweet_statistics()
-    print("\n> 2017")
-    analyzer = TA(open("milano_finanza_2017_sumup.json"))
-    analyzer.get_tweet_statistics()
-    print("\n> 2018")
-    analyzer = TA(open("milano_finanza_2018_sumup.json"))
-    analyzer.get_tweet_statistics()
-    print("\n> 2019")
-    analyzer = TA(open("milano_finanza_2019_sumup.json"))
-    analyzer.get_tweet_statistics()
-    print("\n> 2020")
-    analyzer = TA(open("milano_finanza_2020_sumup.json"))
-    analyzer.get_tweet_statistics()
-
-
-def wrap_tweet(filenames, outname):
+def wrap_tweet(outname):
     tweet_total = []
 
-    for filename in filenames:
-        for tweet in json.load(open(filename)):
-            tweet_total.append(tweet)
+    path = os.getcwd() + "/JSON/"
+    for dir in os.listdir(path):
+        filedir = path + "/" + dir
+        files = []
+        lengths = []
+        index = []
+        file_number = 0
+        for file in os.listdir(filedir):
+            f = json.load(open(filedir + "/" + file))
+            files.append(f)
+            lengths.append(len(f))
+            index.append(0)
+            file_number += 1
+
+        tot_tweets = sum(lengths)
+        for i in tqdm(range(tot_tweets)):
+            tweets = []
+            for j in range(file_number):
+                if index[j] < lengths[j]:
+                    tweets.append(files[j][index[j]]["created_at"])
+                else:
+                    tweets.append("9999-12-31T09:12:16+00:00")
+
+            idx = tweets.index(min(tweets))
+            tweet_total.append(files[idx][index[idx]])
+            index[idx] += 1
 
     with open("{}.json".format(outname), "w") as outfile:
         json.dump(tweet_total, outfile)
 
 
-wrap_tweet(
-    [
-        "JSON/milano_finanza_2016_sumup.json",
-        "JSON/milano_finanza_2017_sumup.json",
-        "JSON/milano_finanza_2018_sumup.json",
-        "JSON/milano_finanza_2019_sumup.json",
-        "JSON/milano_finanza_2020_sumup.json",
-    ],
-    "tweet_from_2016_to_2020",
-)
+def check_wrap(filename):
+    f = json.load(open(filename))
+    ids = set()
+    for t in range(len(f)):
+        ids.add(f[t]["id"])
+    if len(ids) != len(f):
+        print(" >>> ERROR <<< ")
+
+
+wrap_tweet("tweet_from_2016_to_2020")
+# check_wrap("tweet_from_2016_to_2020.json")
 
 
 # analizer = TA(open("tweet_from_2016_to_2020.json"))
