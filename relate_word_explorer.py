@@ -211,6 +211,7 @@ class RelateWordExplorer:
 
     def fill_correlation_graph(self, word, graph, mode, analized=[]):
         correlate_ids, correlate_tokens = self.search_correlate_tokens(word)
+        correlate_tokens = list(correlate_tokens.keys())
         if mode == "deepth":
             for token in correlate_tokens:
                 if token != word and token not in list(graph.nodes):
@@ -222,12 +223,12 @@ class RelateWordExplorer:
             for token in correlate_tokens:
                 if token != word and token not in list(graph.nodes):
                     graph.add_node(token)
-                    # print(f"> add node: {token}")
+                    print(f"> add node: {token}")
                     graph.add_edge(word, token)
             for token in correlate_tokens:
                 if token != word and token not in analized:
                     analized.append(token)
-                    self.fill_correlation_graph_v2(token, graph, "breadth", analized)
+                    self.fill_correlation_graph(token, graph, "breadth", analized)
 
         return graph
 
@@ -309,6 +310,7 @@ class RelateWordExplorer:
     def monthly_correlation(self, entity, day_span=15, mode="token"):
         fig = go.Figure()
         fig.update_layout(title=entity + " (" + mode + ")")
+        dead_data = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
 
@@ -331,22 +333,31 @@ class RelateWordExplorer:
                     entity, "spacy", date_start, date_end
                 )
 
+            if len(month_correlate) == 0:
+                break
+
             val = list(month_correlate.values())[:5]
             key = list(month_correlate.keys())[:5]
 
-            for i in range(min(len(month_correlate), 5)):
-                found = False
+            for j in range(len(fig.data)):
+                if fig.data[j].name not in key:
+                    if fig.data[j].name not in dead_data:
 
-                for j in range(len(fig.data)):
-                    if fig.data[j].name not in key:
                         fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
                         fig.data[j].y = tuple(list(fig.data[j].y) + [0])
 
-                    elif fig.data[j].name == key[i]:
+                        if len(list(fig.data[j].y)) >= 4:
+                            if list(fig.data[j].y)[-4:] == [0 for i in range(4)]:
+                                dead_data.append(fig.data[j].name)
+
+            for i in range(min(len(month_correlate), 5)):
+                found = False
+                for j in range(len(fig.data)):
+                    if fig.data[j].name == key[i]:
                         found = True
-                        fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
-                        fig.data[j].y = tuple(list(fig.data[j].y) + [val[i]])
-                        break
+                        if fig.data[j].name not in dead_data:
+                            fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
+                            fig.data[j].y = tuple(list(fig.data[j].y) + [val[i]])
 
                 if not found:
                     fig.add_trace(
@@ -372,9 +383,10 @@ def explore(filename, entity, data, mode):
 def explore2(filename, entity):
     file = open(filename)
     explorer = RelateWordExplorer(file)
+    print(len(explorer.dataset), explorer.start, explorer.end)
     print(len(explorer.search_tweets(entity)))
-    explorer.monthly_correlation(entity, mode="entity")
+    explorer.monthly_correlation(entity, mode="token")
 
 
-# explore("tweet_from_2016_to_2020.json", "covid-19", "entity", "breadth")
+# explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
 explore2("tweet_from_2016_to_2020.json", "covid-19")
