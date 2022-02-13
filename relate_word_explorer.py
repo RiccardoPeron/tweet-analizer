@@ -292,15 +292,10 @@ class RelateWordExplorer:
         net.from_nx(G)
         net.show("example.html")
 
-    def get_first_entity_occurrence(
-        self,
-        entity,
-    ):
-        for tweet in self.dataset:
-            for spacy_class in ["PER", "LOC", "ORG", "MISC"]:
-                for ent in tweet["entity_labels"][spacy_class]:
-                    if ent == entity:
-                        return tweet["created_at"]
+    def get_last_token_occurrence(self, token):
+        for tweet in reversed(self.dataset):
+            if token in tweet["tokenized_text"]:
+                return tweet["created_at"]
 
     def get_first_token_occurrence(self, token):
         for tweet in self.dataset:
@@ -310,19 +305,24 @@ class RelateWordExplorer:
     def monthly_correlation(self, entity, day_span=15, mode="token"):
         fig = go.Figure()
         fig.update_layout(title=entity + " (" + mode + ")")
-        dead_data = []
+        dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
+        last_occourrence = self.get_last_token_occurrence(entity)
 
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
+        last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
 
         n_iterations = (self.end - self.start).days // day_span
+
+        plot = dict()
 
         for iter in tqdm(range(n_iterations)):
             date_start = first_occurrence + relativedelta(days=iter * day_span)
             date_end = first_occurrence + relativedelta(
                 days=(iter * day_span) + day_span
             )
+            dates.append(date_start)
 
             if mode == "token":
                 _, month_correlate = self.search_correlate_tokens(
@@ -336,38 +336,38 @@ class RelateWordExplorer:
             if len(month_correlate) == 0:
                 break
 
-            val = list(month_correlate.values())[:5]
-            key = list(month_correlate.keys())[:5]
+            vals = list(month_correlate.values())[:5]
+            keys = list(month_correlate.keys())[:5]
 
-            for j in range(len(fig.data)):
-                if fig.data[j].name not in key:
-                    if fig.data[j].name not in dead_data:
+            for i, key in enumerate(keys):
+                if key not in list(plot.keys()):
+                    plot[key] = [-1] * n_iterations
+                if key in list(plot.keys()):
+                    plot[key][iter] = vals[i]
 
-                        fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
-                        fig.data[j].y = tuple(list(fig.data[j].y) + [0])
+            for line in plot.keys():
+                if plot[line][iter] == -1:
+                    plot[line][iter] = 0
 
-                        if len(list(fig.data[j].y)) >= 4:
-                            if list(fig.data[j].y)[-4:] == [0 for i in range(4)]:
-                                dead_data.append(fig.data[j].name)
+        return plot, dates
 
-            for i in range(min(len(month_correlate), 5)):
-                found = False
-                for j in range(len(fig.data)):
-                    if fig.data[j].name == key[i]:
-                        found = True
-                        if fig.data[j].name not in dead_data:
-                            fig.data[j].x = tuple(list(fig.data[j].x) + [date_start])
-                            fig.data[j].y = tuple(list(fig.data[j].y) + [val[i]])
-
-                if not found:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=[date_start],
-                            y=[val[i]],
-                            mode="lines+markers",
-                            name=key[i],
-                        )
+    def generate_plot(self, plot_dict, dates):
+        fig = go.Figure()
+        for line in list(plot_dict.keys()):
+            if plot_dict[line].count(0) < 10:
+                first = 0
+                for i, el in enumerate(plot_dict[line]):
+                    if el > 0:
+                        first = i
+                        break
+                fig.add_trace(
+                    go.Scatter(
+                        y=plot_dict[line][first:],
+                        x=dates[first:],
+                        name=line,
+                        mode="lines+markers",
                     )
+                )
         fig.show()
 
 
@@ -385,7 +385,8 @@ def explore2(filename, entity):
     explorer = RelateWordExplorer(file)
     print(len(explorer.dataset), explorer.start, explorer.end)
     print(len(explorer.search_tweets(entity)))
-    explorer.monthly_correlation(entity, mode="token")
+    plot, dates = explorer.monthly_correlation(entity, mode="token")
+    explorer.generate_plot(plot, dates)
 
 
 # explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
