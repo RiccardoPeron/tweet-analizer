@@ -26,6 +26,9 @@ class RelateWordExplorer:
         self.stop_words.add("l'")
         self.stop_words.add("l’")
 
+    def list_intersection(self, l1, l2):
+        return len(set(l1) & set(l2))
+
     def sort_dict(self, myDict, reverse_=True):
         """
         given a dictionary returns the sorted dictionary
@@ -44,19 +47,21 @@ class RelateWordExplorer:
             )
         }
 
-    def search_tweets(self, word):
-        word = word.lower()
+    def search_tweets(self, words):
+        words = [word.lower() for word in words]
         return [
-            tweet["id"] for tweet in self.dataset if word in tweet["tokenized_text"]
+            tweet["id"]
+            for tweet in self.dataset
+            if len(set(words) & set(tweet["tokenized_text"])) > 0
         ]
 
-    def search_correlate_tokens(self, word, start="", end=""):
+    def search_correlate_tokens(self, words, start="", end=""):
         if start == "":
             start = self.start
         if end == "":
             end = self.end
 
-        word = word.lower()
+        words = [word.lower() for word in words]
         correlate_ids = []
         correlate_tokens = []
         for tweet in self.dataset:
@@ -66,10 +71,13 @@ class RelateWordExplorer:
                 and datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
                 <= end
             ):
-                if word in tweet["tokenized_text"]:
+                if self.list_intersection(words, tweet["tokenized_text"]) > 0:
                     for token in tweet["nouns_verbs"]:
                         if token not in self.stop_words:
-                            correlate_tokens.append(token)
+                            if token in words:
+                                correlate_tokens.append(words[0])
+                            else:
+                                correlate_tokens.append(token)
                             correlate_ids.append(tweet["id"])
         correlate_tokens = Counter(correlate_tokens)
         correlate_tokens = self.sort_dict(correlate_tokens)
@@ -292,28 +300,26 @@ class RelateWordExplorer:
         net.from_nx(G)
         net.show("example.html")
 
-    def get_last_token_occurrence(self, token):
+    def get_last_token_occurrence(self, tokens):
         for tweet in reversed(self.dataset):
-            if token in tweet["tokenized_text"]:
+            if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
-    def get_first_token_occurrence(self, token):
+    def get_first_token_occurrence(self, tokens):
         for tweet in self.dataset:
-            if token in tweet["tokenized_text"]:
+            if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
     def monthly_correlation(self, entity, day_span=15, mode="token"):
-        fig = go.Figure()
-        fig.update_layout(title=entity + " (" + mode + ")")
         dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
-        last_occourrence = self.get_last_token_occurrence(entity)
+        # last_occourrence = self.get_last_token_occurrence(entity)
 
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
-        last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
+        # last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
 
-        n_iterations = (self.end - self.start).days // day_span
+        n_iterations = (self.end - first_occurrence).days // day_span
 
         plot = dict()
 
@@ -333,9 +339,6 @@ class RelateWordExplorer:
                     entity, "spacy", date_start, date_end
                 )
 
-            if len(month_correlate) == 0:
-                break
-
             vals = list(month_correlate.values())[:5]
             keys = list(month_correlate.keys())[:5]
 
@@ -351,10 +354,19 @@ class RelateWordExplorer:
 
         return plot, dates
 
-    def generate_plot(self, plot_dict, dates):
+    def generate_plot(self, plot_dict, dates, entity):
         fig = go.Figure()
         for line in list(plot_dict.keys()):
-            if plot_dict[line].count(0) < 10:
+            if line == entity[0]:
+                fig.add_trace(
+                    go.Scatter(
+                        y=plot_dict[line],
+                        x=dates,
+                        name=line,
+                        mode="lines+markers",
+                    )
+                )
+            elif plot_dict[line].count(0) < 10:
                 first = 0
                 for i, el in enumerate(plot_dict[line]):
                     if el > 0:
@@ -368,6 +380,7 @@ class RelateWordExplorer:
                         mode="lines+markers",
                     )
                 )
+
         fig.show()
 
 
@@ -386,8 +399,19 @@ def explore2(filename, entity):
     print(len(explorer.dataset), explorer.start, explorer.end)
     print(len(explorer.search_tweets(entity)))
     plot, dates = explorer.monthly_correlation(entity, mode="token")
-    explorer.generate_plot(plot, dates)
+    explorer.generate_plot(plot, dates, entity)
 
 
 # explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
-explore2("tweet_from_2016_to_2020.json", "covid-19")
+explore2(
+    "tweet_from_2016_to_2020.json",
+    [
+        "covid-19",
+        "covid",
+        "covid 19",
+        "coronavirus",
+        "corona virus",
+        "pandemia",
+        "epidemia",
+    ],
+)
