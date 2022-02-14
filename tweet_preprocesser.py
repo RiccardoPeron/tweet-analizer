@@ -216,14 +216,14 @@ def get_tokens_arg(text, TP):
                     i = i + 1
                 else:
                     break
-            labels_structure[ent_type].add(set_alias((" ".join(token)).strip(), TP))
-            tokenized_text.append(set_alias((" ".join(token)).strip(), TP))
+            labels_structure[ent_type].add((" ".join(token)).strip())
+            tokenized_text.append((" ".join(token)).strip())
             if nv[i] in ["NOUN", "PROPN", "VERB"]:
-                nouns_vetbs.append(set_alias((" ".join(token)).strip(), TP))
-        elif iobs[i] == "O" and tokens[i] not in [".", ",", ":", ";"]:
-            tokenized_text.append(set_alias(tokens[i], TP))
+                nouns_vetbs.append((" ".join(token)).strip())
+        elif iobs[i] == "O" and tokens[i] not in [".", ",", ":", ";", "#"]:
+            tokenized_text.append(tokens[i])
             if nv[i] in ["NOUN", "PROPN", "VERB"]:
-                nouns_vetbs.append(set_alias(tokens[i], TP))
+                nouns_vetbs.append(tokens[i])
 
     return tokenized_text, labels_structure, nouns_vetbs, lemmatization
 
