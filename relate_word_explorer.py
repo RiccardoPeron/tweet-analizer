@@ -4,6 +4,7 @@ from datetime import datetime
 
 import networkx as nx
 import nltk
+from nltk.corpus import stopwords
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta
 from networkx.algorithms.coloring.greedy_coloring import greedy_color
@@ -13,7 +14,7 @@ from tqdm import tqdm
 
 
 class RelateWordExplorer:
-    def __init__(self, file):
+    def __init__(self, file, lan):
         self.dataset = json.load(file)
         self.start = datetime.fromisoformat(self.dataset[0]["created_at"]).replace(
             tzinfo=None
@@ -22,9 +23,12 @@ class RelateWordExplorer:
             self.dataset[len(self.dataset) - 1]["created_at"]
         ).replace(tzinfo=None)
         nltk.download("stopwords")
-        self.stop_words = set(stopwords.words("italian"))
-        self.stop_words.add("l'")
-        self.stop_words.add("l’")
+        if lan == "it":
+            self.stop_words = set(stopwords.words("italian"))
+            self.stop_words.add("l'")
+            self.stop_words.add("l’")
+        if lan == "en":
+            self.stop_words = set(stopwords.words("english"))
 
     def list_intersection(self, l1, l2):
         return len(set(l1) & set(l2))
@@ -72,7 +76,7 @@ class RelateWordExplorer:
                 <= end
             ):
                 if self.list_intersection(words, tweet["tokenized_text"]) > 0:
-                    for token in tweet["nouns_verbs"]:
+                    for token in tweet["lemmatization"]:
                         if token not in self.stop_words:
                             if token in words:
                                 correlate_tokens.append(words[0])
@@ -393,25 +397,45 @@ def explore(filename, entity, data, mode):
     explorer.print_graph(G)
 
 
-def explore2(filename, entity):
+def explore2(filename, lan, entity):
+    print("opening file...")
     file = open(filename)
-    explorer = RelateWordExplorer(file)
+    print("explorer set up...")
+    explorer = RelateWordExplorer(file, lan)
+    print("counting words...")
     print(len(explorer.dataset), explorer.start, explorer.end)
     print(len(explorer.search_tweets(entity)))
+    print("creating plot...")
     plot, dates = explorer.monthly_correlation(entity, mode="token")
+    print("printing plot...")
     explorer.generate_plot(plot, dates, entity)
 
 
 # explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
-explore2(
-    "tweet_from_2016_to_2020.json",
-    [
-        "covid-19",
-        "covid",
-        "covid 19",
-        "coronavirus",
-        "corona virus",
-        "pandemia",
-        "epidemia",
-    ],
-)
+## explore2(
+##     "tweet_from_2016_to_2020.json",
+##     "it",
+##     [
+##         "covid-19",
+##         "covid",
+##         "covid 19",
+##         "coronavirus",
+##         "corona virus",
+##         "pandemia",
+##         "epidemia",
+##     ],
+## )
+
+## explore2(
+##     "tweet_from_2016_to_2020_en.json",
+##     "en",
+##     [
+##         "covid-19",
+##         "covid",
+##         "covid 19",
+##         "coronavirus",
+##         "corona virus",
+##         "pandemy",
+##         "epidemy",
+##     ],
+## )

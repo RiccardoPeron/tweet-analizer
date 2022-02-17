@@ -24,10 +24,7 @@ class TweeetPreprocesser:
         self,
         file,
         folder,
-        nlp=spacy.load(
-            "it_core_news_lg",
-            exclude=["tagger", "parser", "lemmatizer", "textcat", "custom"],
-        ),
+        lang,
         start_="0001-01-01",
         end_="9999-12-31",
     ) -> None:
@@ -37,7 +34,17 @@ class TweeetPreprocesser:
         self.dataset = json.load(file)
         self.start = datetime.fromisoformat(start_).replace(tzinfo=None)
         self.end = datetime.fromisoformat(end_).replace(tzinfo=None)
-        self.nlp = nlp
+        self.lang = lang
+        if lang == "it":
+            self.nlp = spacy.load(
+                "it_core_news_lg",
+                exclude=["parser", "textcat", "custom"],
+            )
+        elif lang == "en":
+            self.nlp = spacy.load(
+                "en_core_web_trf",
+                exclude=["parser", "textcat", "custom"],
+            )
         self.ALIASES = json.load(open("utilities/aliases.json"))
 
 
@@ -195,7 +202,10 @@ def get_tokens_arg(text, TP):
     # sentences = split_sentences(text)
     # for text in sentences:
     nlp_text = TP.nlp(text)
-    labels_structure = {"LOC": set(), "PER": set(), "ORG": set(), "MISC": set()}
+    if TP.lang == "it":
+        labels_structure = {"LOC": set(), "PER": set(), "ORG": set(), "MISC": set()}
+    if TP.lang == "en":
+        labels_structure = {"LOC": set(), "PERSON": set(), "ORG": set(), "MISC": set()}
 
     iobs = [token.ent_iob_ for token in nlp_text]
     tokens = [token.lower_ for token in nlp_text]
@@ -216,7 +226,10 @@ def get_tokens_arg(text, TP):
                     i = i + 1
                 else:
                     break
-            labels_structure[ent_type].add((" ".join(token)).strip())
+            try:
+                labels_structure[ent_type].add((" ".join(token)).strip())
+            except:
+                labels_structure["MISC"].add((" ".join(token)).strip())
             tokenized_text.append((" ".join(token)).strip())
             if nv[i] in ["NOUN", "PROPN", "VERB"]:
                 nouns_vetbs.append((" ".join(token)).strip())
@@ -300,18 +313,62 @@ def generate_json(tweet_datas, filename):
     print("Completed")
 
 
-def preprocess(folder_name):
+def wrap_tweet(outname, folder):
+    tweet_total = []
+
+    path = os.getcwd() + "/" + folder + "/"
+    for dir in os.listdir(path):
+        filedir = path + "/" + dir
+        files = []
+        lengths = []
+        index = []
+        file_number = 0
+        for file in os.listdir(filedir):
+            f = json.load(open(filedir + "/" + file))
+            files.append(f)
+            lengths.append(len(f))
+            index.append(0)
+            file_number += 1
+
+        tot_tweets = sum(lengths)
+        for i in tqdm(range(tot_tweets)):
+            tweets = []
+            for j in range(file_number):
+                if index[j] < lengths[j]:
+                    tweets.append(files[j][index[j]]["created_at"])
+                else:
+                    tweets.append("9999-12-31T09:12:16+00:00")
+
+            idx = tweets.index(min(tweets))
+            tweet_total.append(files[idx][index[idx]])
+            index[idx] += 1
+
+    with open("{}.json".format(outname), "w") as outfile:
+        json.dump(tweet_total, outfile)
+
+
+def preprocess(folder_name, lan):
     path = os.getcwd() + "/" + folder_name + "/"
+    try:
+        os.mkdir("JSON_" + lan + "/")
+    except:
+        pass
     for dir in os.listdir(path):
         fpath = path + dir + "/"
         for i, file in enumerate(os.listdir(fpath)):
             try:
-                os.mkdir("JSON/" + str(i))
+                os.mkdir("JSON_" + lan + "/" + str(2018 + i))
             except:
                 pass
-            TP = TweeetPreprocesser(fpath + file, dir)
+            TP = TweeetPreprocesser(fpath + file, dir, lan)
             tweets = generate_tweets_datas(TP)
-            generate_json(tweets, "JSON/" + str(i) + "/" + dir + "_sumup")
+            generate_json(
+                tweets, "JSON_" + lan + "/" + str(2018 + i) + "/" + dir + "_sumup"
+            )
+    print("merging preprocessed tweets...")
+    wrap_tweet("merged_tweet_" + lan, "JSON_" + lan)
+    return "merged_tweet_" + lan + ".json"
 
 
-preprocess("sources")
+# preprocess("sources", "it")
+# preprocess("sources_en", "en")
