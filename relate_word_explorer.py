@@ -318,12 +318,12 @@ class RelateWordExplorer:
         dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
-        # last_occourrence = self.get_last_token_occurrence(entity)
+        last_occourrence = self.get_last_token_occurrence(entity)
 
         first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
-        # last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
+        last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
 
-        n_iterations = (self.end - first_occurrence).days // day_span
+        n_iterations = (last_occourrence - first_occurrence).days // day_span
 
         plot = dict()
 
@@ -359,12 +359,17 @@ class RelateWordExplorer:
         return plot, dates
 
     def generate_plot(self, plot_dict, dates, entity):
+        tot = 0
+        for k in list(plot_dict.keys()):
+            tot += sum(plot_dict[k])
+        print("tot: ", tot)
+
         fig = go.Figure()
         for line in list(plot_dict.keys()):
             if line == entity[0]:
                 fig.add_trace(
                     go.Scatter(
-                        y=plot_dict[line],
+                        y=[(val / tot) * 100 for val in plot_dict[line]],
                         x=dates,
                         name=line,
                         mode="lines+markers",
@@ -378,7 +383,7 @@ class RelateWordExplorer:
                         break
                 fig.add_trace(
                     go.Scatter(
-                        y=plot_dict[line][first:],
+                        y=[(val / tot) * 100 for val in plot_dict[line][first:]],
                         x=dates[first:],
                         name=line,
                         mode="lines+markers",
@@ -413,7 +418,7 @@ def explore2(filename, lan, entity):
 
 # explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
 ## explore2(
-##     "tweet_from_2016_to_2020.json",
+##     "merged_tweet_it.json",
 ##     "it",
 ##     [
 ##         "covid-19",
