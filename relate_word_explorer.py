@@ -212,7 +212,7 @@ class RelateWordExplorer:
     def create_correlation_graph(self, word, data="word", mode="breadth"):
         myGraph = nx.Graph()
         if data == "word":
-            myGraph.add_node(word)
+            myGraph.add_node(word, size=len(self.search_tweets("covid-19")))
             myGraph = self.fill_correlation_graph(word, myGraph, mode)
         elif data == "entity":
             myGraph.add_node(word)
@@ -222,23 +222,37 @@ class RelateWordExplorer:
         return myGraph
 
     def fill_correlation_graph(self, word, graph, mode, analized=[]):
+        min_size = 0
         correlate_ids, correlate_tokens = self.search_correlate_tokens(word)
+        correlate_weights = list(correlate_tokens.values())
         correlate_tokens = list(correlate_tokens.keys())
         if mode == "deepth":
-            for token in correlate_tokens:
-                if token != word and token not in list(graph.nodes):
+            for i, token in enumerate(correlate_tokens):
+                if (
+                    token != word
+                    and token not in list(graph.nodes)
+                    and correlate_weights[i] > min_size
+                ):
                     graph.add_node(token, ids=correlate_ids)
                     # print(f"> add node: {token}")
                     self.fill_correlation_graph(token, graph, "depth")
-                    graph.add_edge(word, token)
+                    graph.add_edge(word, token, weight=correlate_weights[i])
         if mode == "breadth":
-            for token in correlate_tokens:
-                if token != word and token not in list(graph.nodes):
-                    graph.add_node(token)
-                    print(f"> add node: {token}")
-                    graph.add_edge(word, token)
-            for token in correlate_tokens:
-                if token != word and token not in analized:
+            for i, token in enumerate(correlate_tokens):
+                if (
+                    token != word
+                    and token not in list(graph.nodes)
+                    and correlate_weights[i] > min_size
+                ):
+                    graph.add_node(token, size=correlate_weights[i])
+                    # print(f"> add node: {token}")
+                    graph.add_edge(word, token, weight=correlate_weights[i])
+            for i, token in enumerate(correlate_tokens):
+                if (
+                    token != word
+                    and token not in analized
+                    and correlate_weights[i] > min_size
+                ):
                     analized.append(token)
                     self.fill_correlation_graph(token, graph, "breadth", analized)
 
@@ -302,6 +316,7 @@ class RelateWordExplorer:
     def print_graph(self, G):
         net = Network(notebook=False)
         net.from_nx(G)
+        net.show_buttons(filter_=["physics"])
         net.show("example.html")
 
     def get_last_token_occurrence(self, tokens):
@@ -393,9 +408,9 @@ class RelateWordExplorer:
         fig.show()
 
 
-def explore(filename, entity, data, mode):
+def explore(filename, lan, entity, data, mode):
     file = open(filename)
-    explorer = RelateWordExplorer(file)
+    explorer = RelateWordExplorer(file, lan)
     G = nx.Graph()
     print("creating graph...")
     G = explorer.create_correlation_graph(entity, data, mode)
@@ -416,7 +431,22 @@ def explore2(filename, lan, entity):
     explorer.generate_plot(plot, dates, entity)
 
 
-# explore("tweet_from_2016_to_2020.json", "covid-19", "word", "breadth")
+explore(
+    "JSON_it/2020/24finanza_sumup.json",
+    "it",
+    [
+        "covid-19",
+        "covid",
+        "covid 19",
+        "coronavirus",
+        "corona virus",
+        "pandemia",
+        "epidemia",
+    ],
+    "word",
+    "breadth",
+)
+
 ## explore2(
 ##     "merged_tweet_it.json",
 ##     "it",
