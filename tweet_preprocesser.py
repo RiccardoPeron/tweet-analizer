@@ -212,7 +212,9 @@ def get_tokens_arg(text, TP):
     ents = [token.ent_type_ for token in nlp_text]
     nv = [token.pos_ for token in nlp_text]
     lemmatization = [
-        token.lemma_ for token in nlp_text if token.pos_ in ["NOUN", "PROPN", "VERB"]
+        token.lemma_
+        for token in nlp_text
+        if token.pos_ in ["NOUN", "PROPN", "VERB"] and len(token.lemma) > 1
     ]
 
     for i in range(len(iobs)):
@@ -226,14 +228,20 @@ def get_tokens_arg(text, TP):
                     i = i + 1
                 else:
                     break
-            try:
-                labels_structure[ent_type].add((" ".join(token)).strip())
-            except:
-                labels_structure["MISC"].add((" ".join(token)).strip())
-            tokenized_text.append((" ".join(token)).strip())
-            if nv[i] in ["NOUN", "PROPN", "VERB"]:
-                nouns_vetbs.append((" ".join(token)).strip())
-        elif iobs[i] == "O" and tokens[i] not in [".", ",", ":", ";", "#"]:
+            tk = (" ".join(token)).strip()
+            if len(tk) > 1:
+                try:
+                    labels_structure[ent_type].add(tk)
+                except:
+                    labels_structure["MISC"].add(tk)
+                tokenized_text.append(tk)
+                if nv[i] in ["NOUN", "PROPN", "VERB"]:
+                    nouns_vetbs.append(tk)
+        elif (
+            iobs[i] == "O"
+            and tokens[i] not in [".", ",", ":", ";", "#"]
+            and len(tokens[1]) > 1
+        ):
             tokenized_text.append(tokens[i])
             if nv[i] in ["NOUN", "PROPN", "VERB"]:
                 nouns_vetbs.append(tokens[i])
