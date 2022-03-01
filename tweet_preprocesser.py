@@ -214,7 +214,7 @@ def get_tokens_arg(text, TP):
     lemmatization = [
         token.lemma_
         for token in nlp_text
-        if token.pos_ in ["NOUN", "PROPN", "VERB"] and len(token.lemma) > 1
+        if token.pos_ in ["NOUN", "PROPN", "VERB"] and len(token.lemma_) > 1
     ]
 
     for i in range(len(iobs)):
@@ -240,7 +240,7 @@ def get_tokens_arg(text, TP):
         elif (
             iobs[i] == "O"
             and tokens[i] not in [".", ",", ":", ";", "#"]
-            and len(tokens[1]) > 1
+            and len(tokens[i]) > 1
         ):
             tokenized_text.append(tokens[i])
             if nv[i] in ["NOUN", "PROPN", "VERB"]:
@@ -325,13 +325,16 @@ def wrap_tweet(outname, folder):
     tweet_total = []
 
     path = os.getcwd() + "/" + folder + "/"
+    print(">", path)
     for dir in os.listdir(path):
+        print("\t", dir)
         filedir = path + "/" + dir
         files = []
         lengths = []
         index = []
         file_number = 0
         for file in os.listdir(filedir):
+            print("\t\t", file)
             f = json.load(open(filedir + "/" + file))
             files.append(f)
             lengths.append(len(f))
@@ -363,20 +366,22 @@ def preprocess(folder_name, lan):
         pass
     for dir in os.listdir(path):
         fpath = path + dir + "/"
-        for i, file in enumerate(os.listdir(fpath)):
+        for file in os.listdir(fpath):
+            year = file[len(dir) + 1 : len(dir) + 5]
             try:
-                os.mkdir("JSON_" + lan + "/" + str(2018 + i))
+                os.mkdir("JSON_" + lan + "/" + str(year))
             except:
                 pass
             TP = TweeetPreprocesser(fpath + file, dir, lan)
             tweets = generate_tweets_datas(TP)
             generate_json(
-                tweets, "JSON_" + lan + "/" + str(2018 + i) + "/" + dir + "_sumup"
+                tweets, "JSON_" + lan + "/" + str(year) + "/" + dir + "_sumup"
             )
     print("merging preprocessed tweets...")
     wrap_tweet("merged_tweet_" + lan, "JSON_" + lan)
     return "merged_tweet_" + lan + ".json"
 
 
-# preprocess("sources", "it")
+# wrap_tweet("merged_tweet_it", "JSON_it")
+# preprocess("sources_it", "it")
 # preprocess("sources_en", "en")
