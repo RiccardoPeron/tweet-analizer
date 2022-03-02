@@ -22,6 +22,7 @@ class RelateWordExplorer:
         self.end = datetime.fromisoformat(
             self.dataset[len(self.dataset) - 1]["created_at"]
         ).replace(tzinfo=None)
+        self.token_number = self.count_tokens()
         nltk.download("stopwords")
         if lan == "it":
             self.stop_words = set(stopwords.words("italian"))
@@ -50,6 +51,12 @@ class RelateWordExplorer:
                 myDict.items(), key=lambda item: item[1], reverse=reverse_
             )
         }
+
+    def count_tokens(self):
+        tokens_n = 0
+        for tweet in self.dataset:
+            tokens_n += len(tweet["lemmatization"])
+        return tokens_n
 
     def search_tweets(self, words):
         words = [word.lower() for word in words]
@@ -211,21 +218,42 @@ class RelateWordExplorer:
 
     def create_correlation_graph(self, word, data="word", mode="breadth"):
         myGraph = nx.Graph()
+        size = len(self.search_tweets(word))
         if data == "word":
-            myGraph.add_node(word, size=len(self.search_tweets("covid-19")))
-            myGraph = self.fill_correlation_graph(word, myGraph, mode)
+            myGraph.add_node(word[0], size=15)
+            first_occurrence = self.get_first_token_occurrence(word)
+            last_occourrence = self.get_last_token_occurrence(word)
+            print(first_occurrence, "--->", last_occourrence)
+
+            first_occurrence = datetime.fromisoformat(first_occurrence).replace(
+                tzinfo=None
+            )
+            last_occourrence = datetime.fromisoformat(last_occourrence).replace(
+                tzinfo=None
+            )
+            myGraph = self.fill_correlation_graph(
+                word, size, myGraph, mode, first_occurrence, last_occourrence
+            )
         elif data == "entity":
-            myGraph.add_node(word)
+            myGraph.add_node(word[0])
             myGraph = self.fill_correlation_graph_ent(word, myGraph, mode)
         if mode == "connect":
             myGraph = self.trim_graph(myGraph, 3)
         return myGraph
 
-    def fill_correlation_graph(self, word, graph, mode, analized=[]):
-        min_size = 0
-        correlate_ids, correlate_tokens = self.search_correlate_tokens(word)
+    def fill_correlation_graph(
+        self, word, size, graph, mode, first_occurrence, last_occourrence, analized=[]
+    ):
+        min_size = 10
+
+        if type(word) != type([]):
+            word = [word]
+        correlate_ids, correlate_tokens = self.search_correlate_tokens(
+            word, first_occurrence, last_occourrence
+        )
         correlate_weights = list(correlate_tokens.values())
         correlate_tokens = list(correlate_tokens.keys())
+        word = word[0]
         if mode == "deepth":
             for i, token in enumerate(correlate_tokens):
                 if (
@@ -233,28 +261,46 @@ class RelateWordExplorer:
                     and token not in list(graph.nodes)
                     and correlate_weights[i] > min_size
                 ):
-                    graph.add_node(token, ids=correlate_ids)
+                    graph.add_node(token, size=(correlate_weights[i] / size) * 100)
                     # print(f"> add node: {token}")
-                    self.fill_correlation_graph(token, graph, "depth")
-                    graph.add_edge(word, token, weight=correlate_weights[i])
+                    self.fill_correlation_graph(
+                        token, size, graph, "depth", first_occurrence, last_occourrence
+                    )
+                    graph.add_edge(
+                        word,
+                        token,
+                        weight=correlate_weights[i],
+                    )
         if mode == "breadth":
-            for i, token in enumerate(correlate_tokens):
+            for i, token in enumerate(correlate_tokens[:20]):
                 if (
                     token != word
                     and token not in list(graph.nodes)
                     and correlate_weights[i] > min_size
                 ):
-                    graph.add_node(token, size=correlate_weights[i])
+                    graph.add_node(token, size=(correlate_weights[i] / size) * 100)
                     # print(f"> add node: {token}")
-                    graph.add_edge(word, token, weight=correlate_weights[i])
-            for i, token in enumerate(correlate_tokens):
+                    graph.add_edge(
+                        word,
+                        token,
+                        weight=correlate_weights[i],
+                    )
+            for i, token in enumerate(correlate_tokens[:20]):
                 if (
                     token != word
                     and token not in analized
                     and correlate_weights[i] > min_size
                 ):
                     analized.append(token)
-                    self.fill_correlation_graph(token, graph, "breadth", analized)
+                    self.fill_correlation_graph(
+                        token,
+                        size,
+                        graph,
+                        "breadth",
+                        first_occurrence,
+                        last_occourrence,
+                        analized,
+                    )
 
         return graph
 
@@ -409,8 +455,13 @@ class RelateWordExplorer:
 
 
 def explore(filename, lan, entity, data, mode):
+    print("opening file...")
     file = open(filename)
+    print("explorer set up...")
     explorer = RelateWordExplorer(file, lan)
+    print("counting words...")
+    print(len(explorer.dataset), explorer.start, explorer.end)
+    print(len(explorer.search_tweets(entity)))
     G = nx.Graph()
     print("creating graph...")
     G = explorer.create_correlation_graph(entity, data, mode)
@@ -431,21 +482,21 @@ def explore2(filename, lan, entity):
     explorer.generate_plot(plot, dates, entity)
 
 
-explore(
-    "JSON_it/2020/24finanza_sumup.json",
-    "it",
-    [
-        "covid-19",
-        "covid",
-        "covid 19",
-        "coronavirus",
-        "corona virus",
-        "pandemia",
-        "epidemia",
-    ],
-    "word",
-    "breadth",
-)
+## explore(
+##     "merged_tweet_it.json",
+##     "it",
+##     [
+##         "covid-19",
+##         "covid",
+##         "covid 19",
+##         "coronavirus",
+##         "corona virus",
+##         "pandemia",
+##         "epidemia",
+##     ],
+##     "word",
+##     "breadth",
+## )
 
 ## explore2(
 ##     "merged_tweet_it.json",
