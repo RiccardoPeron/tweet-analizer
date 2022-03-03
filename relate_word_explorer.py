@@ -84,11 +84,11 @@ class RelateWordExplorer:
             ):
                 if self.list_intersection(words, tweet["tokenized_text"]) > 0:
                     for token in tweet["lemmatization"]:
-                        if token not in self.stop_words:
-                            if token in words:
+                        if token.lower() not in self.stop_words:
+                            if token.lower() in words:
                                 correlate_tokens.append(words[0])
                             else:
-                                correlate_tokens.append(token)
+                                correlate_tokens.append(token.lower())
                             correlate_ids.append(tweet["id"])
         correlate_tokens = Counter(correlate_tokens)
         correlate_tokens = self.sort_dict(correlate_tokens)
@@ -375,14 +375,27 @@ class RelateWordExplorer:
             if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
-    def monthly_correlation(self, entity, day_span=15, mode="token"):
+    def monthly_correlation(self, entity, start="'", end="", day_span=15, mode="token"):
         dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
         last_occourrence = self.get_last_token_occurrence(entity)
 
-        first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
-        last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
+        if start != "" and start > first_occurrence:
+            first_occurrence = datetime.fromisoformat(start).replace(tzinfo=None)
+        else:
+            first_occurrence = datetime.fromisoformat(first_occurrence).replace(
+                tzinfo=None
+            )
+
+        if end != "" and end < last_occourrence:
+            last_occourrence = datetime.fromisoformat(end).replace(tzinfo=None)
+        else:
+            last_occourrence = datetime.fromisoformat(last_occourrence).replace(
+                tzinfo=None
+            )
+
+        print("perood: ", first_occurrence, "--->", last_occourrence)
 
         n_iterations = (last_occourrence - first_occurrence).days // day_span
 
@@ -419,14 +432,15 @@ class RelateWordExplorer:
 
         return plot, dates
 
-    def generate_plot(self, plot_dict, dates, entity):
+    def generate_plot(self, plot_dict, dates, entity, day_span):
         tot = 0
+        len_plot = len(plot_dict[list(plot_dict.keys())[0]])
         for k in list(plot_dict.keys()):
-            tot += sum(plot_dict[k])
+            tot += sum([val for val in plot_dict[k] if val > 0])
         print("tot: ", tot)
 
         fig = go.Figure()
-        for line in list(plot_dict.keys()):
+        for l, line in enumerate(list(plot_dict.keys())):
             if line == entity[0]:
                 fig.add_trace(
                     go.Scatter(
@@ -468,20 +482,36 @@ def explore(filename, lan, entity, data, mode):
     explorer.print_graph(G)
 
 
-def explore2(filename, lan, entity):
+def explore2(filename, lan, entity, start="", end="", day_span=15):
     print("opening file...")
     file = open(filename)
     print("explorer set up...")
     explorer = RelateWordExplorer(file, lan)
-    print("counting words...")
-    print(len(explorer.dataset), explorer.start, explorer.end)
-    print(len(explorer.search_tweets(entity)))
     print("creating plot...")
-    plot, dates = explorer.monthly_correlation(entity, mode="token")
+    plot, dates = explorer.monthly_correlation(
+        entity, start=start, end=end, day_span=day_span, mode="token"
+    )
     print("printing plot...")
-    explorer.generate_plot(plot, dates, entity)
+    explorer.generate_plot(plot, dates, entity, day_span)
 
 
+# ITA (covid)
+## explore2(
+##     "merged_tweet_it.json",
+##     "it",
+##     [
+##         "covid-19",
+##         "covid",
+##         "covid 19",
+##         "coronavirus",
+##         "corona virus",
+##         "pandemia",
+##         "epidemia",
+##     ],
+##     start="2020-01-01",
+##     day_span=15,
+## )
+##
 ## explore(
 ##     "merged_tweet_it.json",
 ##     "it",
@@ -498,30 +528,18 @@ def explore2(filename, lan, entity):
 ##     "breadth",
 ## )
 
+# ENG (covid)
 ## explore2(
-##     "merged_tweet_it.json",
-##     "it",
-##     [
-##         "covid-19",
-##         "covid",
-##         "covid 19",
-##         "coronavirus",
-##         "corona virus",
-##         "pandemia",
-##         "epidemia",
-##     ],
+##     "merged_tweet_en.json",
+##     "en",
+##     ["covid-19", "covid", "covid 19", "coronavirus", "corona virus"],
+##     day_span=15,
 ## )
 
-## explore2(
-##     "tweet_from_2016_to_2020_en.json",
+## explore(
+##     "merged_tweet_en.json",
 ##     "en",
-##     [
-##         "covid-19",
-##         "covid",
-##         "covid 19",
-##         "coronavirus",
-##         "corona virus",
-##         "pandemy",
-##         "epidemy",
-##     ],
+##     ["covid-19", "covid", "covid 19", "coronavirus", "corona virus"],
+##     "word",
+##     "breadth",
 ## )
