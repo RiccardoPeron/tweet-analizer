@@ -95,154 +95,35 @@ class RelateWordExplorer:
         # correlate_tokens = list(correlate_tokens)[0:4]
         return correlate_ids, correlate_tokens
 
-    def search_correlate_entities(self, entity, tool, start="", end=""):
-        correlate = []
-        if start == "":
-            start = self.start
-        if end == "":
-            end = self.end
-
-        if tool == "spacy":
-            for tweet in self.dataset:
-                if (
-                    datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
-                    >= start
-                    and datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
-                    <= end
-                ):
-                    if entity in tweet["tokenized_text"]:
-                        for ent in tweet["entity_labels"]["PER"]:
-                            correlate.append(ent)
-                        for ent in tweet["entity_labels"]["LOC"]:
-                            correlate.append(ent)
-                        for ent in tweet["entity_labels"]["ORG"]:
-                            correlate.append(ent)
-                        for ent in tweet["entity_labels"]["MISC"]:
-                            correlate.append(ent)
-
-                    ## entities = []
-                    ## isent = False
-                    ## for ent in tweet["entity_labels"]["PER"]:
-                    ##     if entity == ent:
-                    ##         isent = True
-                    ##     entities.append(ent)
-                    ## for ent in tweet["entity_labels"]["LOC"]:
-                    ##     if entity == ent:
-                    ##         isent = True
-                    ##     entities.append(ent)
-                    ## for ent in tweet["entity_labels"]["ORG"]:
-                    ##     if entity == ent:
-                    ##         isent = True
-                    ##     entities.append(ent)
-                    ## for ent in tweet["entity_labels"]["MISC"]:
-                    ##     if entity == ent:
-                    ##         isent = True
-                    ##     entities.append(ent)
-                    ## if isent:
-                    ##     for ent in entities:
-                    ##         correlate.append(ent)
-        if tool == "context_annotations":
-            for tweet in self.dataset:
-                entities = []
-                isent = False
-                for ent in tweet["context_annotations"]["product"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["entertainment"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["videogame"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["sport"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["person"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["politics"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["brand"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["event"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["context_annotations"]["other"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                if isent:
-                    for ent in entities:
-                        correlate.append(ent)
-        if tool == "entities_annotations":
-            for tweet in self.dataset:
-                entities = []
-                isent = False
-                for ent in tweet["entities_annotations"]["Person"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entities_annotations"]["Place"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entities_annotations"]["Product"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entities_annotations"]["Organization"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-                for ent in tweet["entities_annotations"]["Other"]:
-                    if entity == ent:
-                        isent = True
-                    entities.append(ent)
-
-        correlate = Counter(correlate)
-        correlate = self.sort_dict(correlate)
-        # correlate = list(correlate)
-        # correlate = [cor for cor in list(correlate) if correlate[cor] > 1] # sfoltisce troppo forse
-
-        return correlate
-
-    def create_correlation_graph(self, word, data="word", mode="breadth"):
+    def create_correlation_graph(self, word, tree=True):
         myGraph = nx.Graph()
         size = len(self.search_tweets(word))
-        if data == "word":
-            myGraph.add_node(word[0], size=15)
-            first_occurrence = self.get_first_token_occurrence(word)
-            last_occourrence = self.get_last_token_occurrence(word)
-            print(first_occurrence, "--->", last_occourrence)
 
-            first_occurrence = datetime.fromisoformat(first_occurrence).replace(
-                tzinfo=None
-            )
-            last_occourrence = datetime.fromisoformat(last_occourrence).replace(
-                tzinfo=None
-            )
-            myGraph = self.fill_correlation_graph(
-                word, size, myGraph, mode, first_occurrence, last_occourrence
-            )
-        elif data == "entity":
-            myGraph.add_node(word[0])
-            myGraph = self.fill_correlation_graph_ent(word, myGraph, mode)
-        if mode == "connect":
+        myGraph.add_node(word[0], size=15)
+        first_occurrence = self.get_first_token_occurrence(word)
+        last_occourrence = self.get_last_token_occurrence(word)
+        print(first_occurrence, "--->", last_occourrence)
+
+        first_occurrence = datetime.fromisoformat(first_occurrence).replace(tzinfo=None)
+        last_occourrence = datetime.fromisoformat(last_occourrence).replace(tzinfo=None)
+        myGraph = self.fill_correlation_graph(
+            word, size, myGraph, tree, first_occurrence, last_occourrence
+        )
+
+        if not tree:
             myGraph = self.trim_graph(myGraph, 3)
         return myGraph
 
     def fill_correlation_graph(
-        self, word, size, graph, mode, first_occurrence, last_occourrence, analized=[]
+        self,
+        word,
+        size,
+        graph,
+        tree,
+        first_occurrence,
+        last_occourrence,
+        max_neighbors=20,
+        analized=[],
     ):
         min_size = 10
 
@@ -254,25 +135,9 @@ class RelateWordExplorer:
         correlate_weights = list(correlate_tokens.values())
         correlate_tokens = list(correlate_tokens.keys())
         word = word[0]
-        if mode == "deepth":
-            for i, token in enumerate(correlate_tokens):
-                if (
-                    token != word
-                    and token not in list(graph.nodes)
-                    and correlate_weights[i] > min_size
-                ):
-                    graph.add_node(token, size=(correlate_weights[i] / size) * 100)
-                    # print(f"> add node: {token}")
-                    self.fill_correlation_graph(
-                        token, size, graph, "depth", first_occurrence, last_occourrence
-                    )
-                    graph.add_edge(
-                        word,
-                        token,
-                        weight=correlate_weights[i],
-                    )
-        if mode == "breadth":
-            for i, token in enumerate(correlate_tokens[:20]):
+
+        if tree:
+            for i, token in enumerate(correlate_tokens[:max_neighbors]):
                 if (
                     token != word
                     and token not in list(graph.nodes)
@@ -285,7 +150,7 @@ class RelateWordExplorer:
                         token,
                         weight=correlate_weights[i],
                     )
-            for i, token in enumerate(correlate_tokens[:20]):
+            for i, token in enumerate(correlate_tokens[:max_neighbors]):
                 if (
                     token != word
                     and token not in analized
@@ -296,48 +161,39 @@ class RelateWordExplorer:
                         token,
                         size,
                         graph,
-                        "breadth",
+                        tree,
                         first_occurrence,
                         last_occourrence,
+                        max_neighbors,
                         analized,
                     )
-
-        return graph
-
-    def fill_correlation_graph_ent(self, entity, graph, mode, analized=[]):
-        correlate_ent = self.search_correlate_entities(entity, tool="spacy")
-        correlate_weights = list(correlate_ent.values())
-        correlate_ent = list(correlate_ent.keys())
-        if mode == "depth":
-            for i, ent in enumerate(correlate_ent):
-                if ent != entity and ent not in list(graph.nodes):
-                    graph.add_node(ent)
-                    # print(f"> add node: {ent}")
-                    self.fill_correlation_graph_ent(ent, graph, "depth")
-                    graph.add_edge(ent, entity, weight=correlate_weights[i])
-        if mode == "breadth":
-            for i, ent in enumerate(correlate_ent):
-                if ent != entity and ent not in list(graph.nodes):
-                    graph.add_node(ent)
-                    # print(f"> add node: {ent}")
-                    graph.add_edge(ent, entity, weight=correlate_weights[i])
-            for ent in correlate_ent:
-                if ent != entity and ent not in analized:
-                    analized.append(ent)
-                    self.fill_correlation_graph_ent(ent, graph, "breadth", analized)
-        if mode == "connect":
-            for i, ent in enumerate(correlate_ent):
-                if ent != entity and ent not in list(graph.nodes):
-                    graph.add_node(ent)
-                    # print(f"> add node: {ent}")
-                    graph.add_edge(ent, entity, weight=correlate_weights[i])
-                    self.fill_correlation_graph_ent(ent, graph, "connect")
-                else:
-                    if ent != entity:
-                        # if graph.has_edge(entity, ent):
-                        #     graph[entity][ent]["weight"] += 1
-                        # else:
-                        graph.add_edge(ent, entity, weight=correlate_weights[i])
+        else:
+            for i, token in enumerate(correlate_tokens[:max_neighbors]):
+                if token != word and correlate_weights[i] > min_size:
+                    graph.add_node(token, size=(correlate_weights[i] / size) * 100)
+                    # print(f"> add node: {token}")
+                    graph.add_edge(
+                        word,
+                        token,
+                        weight=correlate_weights[i],
+                    )
+            for i, token in enumerate(correlate_tokens[:max_neighbors]):
+                if (
+                    token != word
+                    and token not in analized
+                    and correlate_weights[i] > min_size
+                ):
+                    analized.append(token)
+                    self.fill_correlation_graph(
+                        token,
+                        size,
+                        graph,
+                        tree,
+                        first_occurrence,
+                        last_occourrence,
+                        max_neighbors,
+                        analized,
+                    )
 
         return graph
 
@@ -375,7 +231,7 @@ class RelateWordExplorer:
             if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
-    def monthly_correlation(self, entity, start="'", end="", day_span=15, mode="token"):
+    def monthly_correlation(self, entity, start="'", end="", day_span=15):
         dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
@@ -408,14 +264,9 @@ class RelateWordExplorer:
             )
             dates.append(date_start)
 
-            if mode == "token":
-                _, month_correlate = self.search_correlate_tokens(
-                    entity, date_start, date_end
-                )
-            else:
-                month_correlate = self.search_correlate_entities(
-                    entity, "spacy", date_start, date_end
-                )
+            _, month_correlate = self.search_correlate_tokens(
+                entity, date_start, date_end
+            )
 
             vals = list(month_correlate.values())[:5]
             keys = list(month_correlate.keys())[:5]
@@ -468,7 +319,7 @@ class RelateWordExplorer:
         fig.show()
 
 
-def explore(filename, lan, entity, data, mode):
+def explore(filename, lan, entity, tree=True):
     print("opening file...")
     file = open(filename)
     print("explorer set up...")
@@ -478,7 +329,7 @@ def explore(filename, lan, entity, data, mode):
     print(len(explorer.search_tweets(entity)))
     G = nx.Graph()
     print("creating graph...")
-    G = explorer.create_correlation_graph(entity, data, mode)
+    G = explorer.create_correlation_graph(entity, tree)
     explorer.print_graph(G)
 
 
@@ -489,7 +340,7 @@ def explore2(filename, lan, entity, start="", end="", day_span=15):
     explorer = RelateWordExplorer(file, lan)
     print("creating plot...")
     plot, dates = explorer.monthly_correlation(
-        entity, start=start, end=end, day_span=day_span, mode="token"
+        entity, start=start, end=end, day_span=day_span
     )
     print("printing plot...")
     explorer.generate_plot(plot, dates, entity, day_span)
@@ -511,22 +362,21 @@ def explore2(filename, lan, entity, start="", end="", day_span=15):
 ##     start="2020-01-01",
 ##     day_span=15,
 ## )
-##
-## explore(
-##     "merged_tweet_it.json",
-##     "it",
-##     [
-##         "covid-19",
-##         "covid",
-##         "covid 19",
-##         "coronavirus",
-##         "corona virus",
-##         "pandemia",
-##         "epidemia",
-##     ],
-##     "word",
-##     "breadth",
-## )
+
+explore(
+    "merged_tweet_it.json",
+    "it",
+    [
+        "covid-19",
+        "covid",
+        "covid 19",
+        "coronavirus",
+        "corona virus",
+        "pandemia",
+        "epidemia",
+    ],
+    tree=False,
+)
 
 # ENG (covid)
 ## explore2(
@@ -540,6 +390,4 @@ def explore2(filename, lan, entity, start="", end="", day_span=15):
 ##     "merged_tweet_en.json",
 ##     "en",
 ##     ["covid-19", "covid", "covid 19", "coronavirus", "corona virus"],
-##     "word",
-##     "breadth",
 ## )
