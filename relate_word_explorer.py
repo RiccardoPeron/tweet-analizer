@@ -291,6 +291,12 @@ class RelateWordExplorer:
         print("tot: ", tot)
 
         fig = go.Figure()
+        fig.update_layout(
+            title="Trends of " + entity[0],
+            xaxis_title="Time",
+            yaxis_title="Percentage of occurrences",
+            legend_title="Tokens",
+        )
         for l, line in enumerate(list(plot_dict.keys())):
             if line == entity[0]:
                 fig.add_trace(
@@ -363,20 +369,19 @@ def explore2(filename, lan, entity, start="", end="", day_span=15):
 ##     day_span=15,
 ## )
 
-explore(
-    "merged_tweet_it.json",
-    "it",
-    [
-        "covid-19",
-        "covid",
-        "covid 19",
-        "coronavirus",
-        "corona virus",
-        "pandemia",
-        "epidemia",
-    ],
-    tree=False,
-)
+## explore(
+##     "merged_tweet_it.json",
+##     "it",
+##     [
+##         "covid-19",
+##         "covid",
+##         "covid 19",
+##         "coronavirus",
+##         "corona virus",
+##         "pandemia",
+##         "epidemia",
+##     ],
+## )
 
 # ENG (covid)
 ## explore2(
