@@ -361,7 +361,7 @@ def wrap_tweet(outname, folder):
 def preprocess(folder_name, lan):
     path = os.getcwd() + "/" + folder_name + "/"
     try:
-        os.mkdir("JSON_" + lan + "/")
+        os.mkdir("JSON_" + folder_name + "/")
     except:
         pass
     for dir in os.listdir(path):
@@ -369,17 +369,17 @@ def preprocess(folder_name, lan):
         for file in os.listdir(fpath):
             year = file[len(dir) + 1 : len(dir) + 5]
             try:
-                os.mkdir("JSON_" + lan + "/" + str(year))
+                os.mkdir("JSON_" + folder_name + "/" + str(year))
             except:
                 pass
             TP = TweeetPreprocesser(fpath + file, dir, lan)
             tweets = generate_tweets_datas(TP)
             generate_json(
-                tweets, "JSON_" + lan + "/" + str(year) + "/" + dir + "_sumup"
+                tweets, "JSON_" + folder_name + "/" + str(year) + "/" + dir + "_sumup"
             )
     print("merging preprocessed tweets...")
-    wrap_tweet("merged_tweet_" + lan, "JSON_" + lan)
-    return "merged_tweet_" + lan + ".json"
+    wrap_tweet("merged_tweet_" + folder_name, "JSON_" + folder_name)
+    return "merged_tweet_" + folder_name + ".json"
 
 
 # wrap_tweet("merged_tweet_it", "JSON_it")
