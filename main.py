@@ -9,8 +9,8 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 # import tweet_analyzer
-import tweet_preprocesser as TP
-import relate_word_explorer as TE
+import preprocesser as TP
+import explorer as TE
 
 
 def check_wrap(filename):
@@ -25,17 +25,15 @@ def check_wrap(filename):
 # analizer = TA(open("tweet_from_2016_to_2020.json"))
 # analizer.print_trends_graph('prova', [['brexit'], ['piazza affari'], ['borsa'], ['brexit', 'accordo'], ['brexit', 'ue'], ['brexit', 'sterlina'], ['brexit', 'may'], ['brexit', 'dopo'], ['brexit', 'no'], ['brexit', 'borse'], ['brexit', 'piazza affari'], ['brexit', 'hard']])
 
-merged_file_name = TP.preprocess("sources_it", "it")
+merged_file_name = TP.preprocess("sources_en_journal", "en")
 TE.explore2(
     merged_file_name,
-    "it",
+    "en",
     [
         "covid-19",
         "covid",
         "covid 19",
         "coronavirus",
         "corona virus",
-        "pandemia",
-        "epidemia",
     ],
 )
