@@ -1,16 +1,7 @@
 import json
-from collections import Counter
-import os
 
-import nltk
-import plotly.graph_objects as go
-from nltk.corpus import stopwords
-
-from tqdm import tqdm
-
-# import tweet_analyzer
-import preprocesser as TP
 import explorer as TE
+import preprocesser as TP
 
 
 def check_wrap(filename):
@@ -28,6 +19,7 @@ def check_wrap(filename):
 merged_file_name = TP.preprocess("sources_en_journal", "en")
 TE.explore2(
     merged_file_name,
+    # "merged_tweet_sources_en.json",
     "en",
     [
         "covid-19",
@@ -36,4 +28,5 @@ TE.explore2(
         "coronavirus",
         "corona virus",
     ],
+    day_span=15,
 )

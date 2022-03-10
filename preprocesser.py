@@ -42,7 +42,7 @@ class TweeetPreprocesser:
             )
         elif lang == "en":
             self.nlp = spacy.load(
-                "en_core_web_trf",
+                "en_core_web_lg",
                 exclude=["parser", "textcat", "custom"],
             )
         self.ALIASES = json.load(open("utilities/aliases.json"))
@@ -302,7 +302,15 @@ def generate_tweets_datas(TP):
             )
         )
     tweets.reverse()
-    return tweets
+
+    dataset = {
+        "len": len(tweets),
+        "begin": tweets[0]["created_at"],
+        "end": tweets[len(tweets) - 1]["created_at"],
+        "tweets": tweets,
+    }
+
+    return dataset
 
 
 def generate_json(tweet_datas, filename):
@@ -323,6 +331,7 @@ def generate_json(tweet_datas, filename):
 
 def wrap_tweet(outname, folder):
     tweet_total = []
+    sources = set()
 
     path = os.getcwd() + "/" + folder + "/"
     print(">", path)
@@ -336,8 +345,8 @@ def wrap_tweet(outname, folder):
         for file in os.listdir(filedir):
             print("\t\t", file)
             f = json.load(open(filedir + "/" + file))
-            files.append(f)
-            lengths.append(len(f))
+            files.append(f["tweets"])
+            lengths.append(len(f["tweets"]))
             index.append(0)
             file_number += 1
 
@@ -352,10 +361,19 @@ def wrap_tweet(outname, folder):
 
             idx = tweets.index(min(tweets))
             tweet_total.append(files[idx][index[idx]])
+            sources.add(files[idx][index[idx]]["source"])
             index[idx] += 1
 
+    merge = {
+        "len": len(tweet_total),
+        "begin": tweet_total[0]["created_at"],
+        "end": tweet_total[len(tweet_total) - 1]["created_at"],
+        "sources": list(sources),
+        "tweets": tweet_total,
+    }
+
     with open("{}.json".format(outname), "w") as outfile:
-        json.dump(tweet_total, outfile)
+        json.dump(merge, outfile)
 
 
 def preprocess(folder_name, lan):
@@ -382,6 +400,6 @@ def preprocess(folder_name, lan):
     return "merged_tweet_" + folder_name + ".json"
 
 
-# wrap_tweet("merged_tweet_it", "JSON_it")
+# wrap_tweet("merged_tweet_sources_it", "JSON_sources_it")
 # preprocess("sources_it", "it")
 # preprocess("sources_en", "en")

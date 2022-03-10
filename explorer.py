@@ -16,12 +16,9 @@ from tqdm import tqdm
 class RelateWordExplorer:
     def __init__(self, file, lan):
         self.dataset = json.load(file)
-        self.start = datetime.fromisoformat(self.dataset[0]["created_at"]).replace(
-            tzinfo=None
-        )
-        self.end = datetime.fromisoformat(
-            self.dataset[len(self.dataset) - 1]["created_at"]
-        ).replace(tzinfo=None)
+        self.tweets = self.dataset["tweets"]
+        self.start = datetime.fromisoformat(self.dataset["begin"]).replace(tzinfo=None)
+        self.end = datetime.fromisoformat(self.dataset["end"]).replace(tzinfo=None)
         self.token_number = self.count_tokens()
         nltk.download("stopwords")
         if lan == "it":
@@ -54,7 +51,7 @@ class RelateWordExplorer:
 
     def count_tokens(self):
         tokens_n = 0
-        for tweet in self.dataset:
+        for tweet in self.tweets:
             tokens_n += len(tweet["lemmatization"])
         return tokens_n
 
@@ -62,7 +59,7 @@ class RelateWordExplorer:
         words = [word.lower() for word in words]
         return [
             tweet["id"]
-            for tweet in self.dataset
+            for tweet in self.tweets
             if len(set(words) & set(tweet["tokenized_text"])) > 0
         ]
 
@@ -75,7 +72,7 @@ class RelateWordExplorer:
         words = [word.lower() for word in words]
         correlate_ids = []
         correlate_tokens = []
-        for tweet in self.dataset:
+        for tweet in self.tweets:
             if (
                 datetime.fromisoformat(tweet["created_at"]).replace(tzinfo=None)
                 >= start
@@ -222,16 +219,16 @@ class RelateWordExplorer:
         net.show("example.html")
 
     def get_last_token_occurrence(self, tokens):
-        for tweet in reversed(self.dataset):
+        for tweet in reversed(self.tweets):
             if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
     def get_first_token_occurrence(self, tokens):
-        for tweet in self.dataset:
+        for tweet in self.tweets:
             if self.list_intersection(tokens, tweet["tokenized_text"]) > 0:
                 return tweet["created_at"]
 
-    def monthly_correlation(self, entity, start="'", end="", day_span=15):
+    def monthly_correlation(self, entity, start="", end="", day_span=15):
         dates = []
 
         first_occurrence = self.get_first_token_occurrence(entity)
@@ -292,9 +289,13 @@ class RelateWordExplorer:
 
         fig = go.Figure()
         fig.update_layout(
-            title="Trends of " + entity[0],
-            xaxis_title="Time",
-            yaxis_title="Percentage of occurrences",
+            title="<b>Trends of "
+            + entity[0]
+            + " "
+            + str(self.dataset["sources"])
+            + "</b>",
+            xaxis_title="<b>Time</b>",
+            yaxis_title="<b>Percentage of occurrences</b>",
             legend_title="Tokens",
         )
         for l, line in enumerate(list(plot_dict.keys())):
@@ -331,7 +332,7 @@ def explore(filename, lan, entity, tree=True):
     print("explorer set up...")
     explorer = RelateWordExplorer(file, lan)
     print("counting words...")
-    print(len(explorer.dataset), explorer.start, explorer.end)
+    print(len(explorer.tweets), explorer.start, explorer.end)
     print(len(explorer.search_tweets(entity)))
     G = nx.Graph()
     print("creating graph...")
