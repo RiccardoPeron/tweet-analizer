@@ -1,5 +1,9 @@
 # tweet-analizer
 
+## Twitter API v2
+
+A brief description of the new version of the twitter API can be found in this document [Twitter API v2.pdf](./Twitter_API_v2.pdf)
+
 ## Setup
 
 Create a virtual enviroment
