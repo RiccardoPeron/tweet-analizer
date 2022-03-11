@@ -3,30 +3,34 @@ import json
 import explorer as TE
 import preprocesser as TP
 
-
-def check_wrap(filename):
-    f = json.load(open(filename))
-    ids = set()
-    for t in range(len(f)):
-        ids.add(f[t]["id"])
-    if len(ids) != len(f):
-        print(" >>> ERROR <<< ")
-
-
-# analizer = TA(open("tweet_from_2016_to_2020.json"))
-# analizer.print_trends_graph('prova', [['brexit'], ['piazza affari'], ['borsa'], ['brexit', 'accordo'], ['brexit', 'ue'], ['brexit', 'sterlina'], ['brexit', 'may'], ['brexit', 'dopo'], ['brexit', 'no'], ['brexit', 'borse'], ['brexit', 'piazza affari'], ['brexit', 'hard']])
-
-merged_file_name = TP.preprocess("sources_en_journal", "en")
+# merged_file_name = TP.preprocess("sources_en_journal", "en")
 TE.explore2(
-    merged_file_name,
-    # "merged_tweet_sources_en.json",
-    "en",
+    # merged_file_name,
+    "merged_tweet_sources_it.json",
+    "it",
     [
         "covid-19",
         "covid",
         "covid 19",
+        "covid19",
         "coronavirus",
         "corona virus",
     ],
-    day_span=15,
+    start="2020-02-01",
+    end="2020-03-30",
+    day_span=5,
+)
+TE.test(
+    "merged_tweet_sources_it.json",
+    "it",
+    [
+        "covid-19",
+        "covid",
+        "covid 19",
+        "covid19",
+        "coronavirus",
+        "corona virus",
+    ],
+    start="2020-02-01",
+    end="2020-03-30",
 )

@@ -308,7 +308,7 @@ class RelateWordExplorer:
                         mode="lines+markers",
                     )
                 )
-            elif plot_dict[line].count(0) < 10:
+            else:
                 first = 0
                 for i, el in enumerate(plot_dict[line]):
                     if el > 0:
@@ -324,6 +324,61 @@ class RelateWordExplorer:
                 )
 
         fig.show()
+
+    def print_test(self, entity, start="", end=""):
+        tweets = {}
+
+        start = datetime.fromisoformat(start).replace(tzinfo=None)
+        end = datetime.fromisoformat(end).replace(tzinfo=None)
+
+        first_occurrence = datetime.fromisoformat(
+            self.get_first_token_occurrence(entity)
+        ).replace(tzinfo=None)
+        last_occourrence = datetime.fromisoformat(
+            self.get_last_token_occurrence(entity)
+        ).replace(tzinfo=None)
+
+        if start != "" and start > first_occurrence:
+            first_occurrence = start
+        else:
+            first_occurrence = datetime.fromisoformat(first_occurrence).replace(
+                tzinfo=None
+            )
+
+        if end != "" and end < last_occourrence:
+            last_occourrence = end
+        else:
+            last_occourrence = datetime.fromisoformat(last_occourrence).replace(
+                tzinfo=None
+            )
+
+        print("perood: ", first_occurrence, "--->", last_occourrence)
+
+        for i, tweet in tqdm(enumerate(self.tweets)):
+            if datetime.fromisoformat(tweet["created_at"]).replace(
+                tzinfo=None
+            ) > first_occurrence and datetime.fromisoformat(
+                tweet["created_at"]
+            ).replace(
+                tzinfo=None
+            ):
+                if self.list_intersection(tweet["tokenized_text"], entity):
+                    tweets[len(tweets)] = tweet["lemmatization"]
+        _, corr = self.search_correlate_tokens(entity, start, end)
+        f = open("check_file.txt", "w")
+        for c in list(corr.keys())[:10]:
+            f.write(c + ": " + str(corr[c]) + "\n")
+        for i in range(len(tweets)):
+            f.write(str(i) + ": " + str(tweets[i]) + "\n")
+        f.close()
+
+
+def test(filename, lan, entity, start="", end=""):
+    print("opening file...")
+    file = open(filename)
+    print("explorer set up...")
+    explorer = RelateWordExplorer(file, lan)
+    explorer.print_test(entity, start, end)
 
 
 def explore(filename, lan, entity, tree=True):
