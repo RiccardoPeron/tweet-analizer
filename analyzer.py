@@ -12,6 +12,7 @@ from nltk.corpus.reader import categorized_sents
 class TweetAnalyzer:
     def __init__(self, file, first="", last=""):
         self.data_full = json.load(file)
+        self.data_full = self.data_full["tweets"]
         self.data_full = self.delete_stopwords()
         self.total_tokens = 0
         self.total_tweets = 0
@@ -603,4 +604,4 @@ def analyze(filename):
     )
 
 
-analyze("JSON/milano_finanza_2018_sumup.json")
+analyze("merged_tweet_sources_it.json")

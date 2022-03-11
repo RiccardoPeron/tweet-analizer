@@ -381,7 +381,7 @@ def test(filename, lan, entity, start="", end=""):
     explorer.print_test(entity, start, end)
 
 
-def explore(filename, lan, entity, tree=True):
+def correlate_graph(filename, lan, entity, tree=True):
     print("opening file...")
     file = open(filename)
     print("explorer set up...")
@@ -395,7 +395,7 @@ def explore(filename, lan, entity, tree=True):
     explorer.print_graph(G)
 
 
-def explore2(filename, lan, entity, start="", end="", day_span=15):
+def correlate_trend(filename, lan, entity, start="", end="", day_span=15):
     print("opening file...")
     file = open(filename)
     print("explorer set up...")
@@ -406,49 +406,3 @@ def explore2(filename, lan, entity, start="", end="", day_span=15):
     )
     print("printing plot...")
     explorer.generate_plot(plot, dates, entity, day_span)
-
-
-# ITA (covid)
-## explore2(
-##     "merged_tweet_it.json",
-##     "it",
-##     [
-##         "covid-19",
-##         "covid",
-##         "covid 19",
-##         "coronavirus",
-##         "corona virus",
-##         "pandemia",
-##         "epidemia",
-##     ],
-##     start="2020-01-01",
-##     day_span=15,
-## )
-
-## explore(
-##     "merged_tweet_it.json",
-##     "it",
-##     [
-##         "covid-19",
-##         "covid",
-##         "covid 19",
-##         "coronavirus",
-##         "corona virus",
-##         "pandemia",
-##         "epidemia",
-##     ],
-## )
-
-# ENG (covid)
-## explore2(
-##     "merged_tweet_en.json",
-##     "en",
-##     ["covid-19", "covid", "covid 19", "coronavirus", "corona virus"],
-##     day_span=15,
-## )
-
-## explore(
-##     "merged_tweet_en.json",
-##     "en",
-##     ["covid-19", "covid", "covid 19", "coronavirus", "corona virus"],
-## )
